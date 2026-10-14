@@ -23,9 +23,9 @@ do_uninstall() {
     fi
 
     # 2. Terminate running instance
-    if pgrep -x "${APP_NAME}" > /dev/null; then
+    if pgrep -x -u "$(id -u)" "${APP_NAME}" > /dev/null; then
         echo "--> Stopping running ${APP_NAME} process..."
-        pkill -x "${APP_NAME}" || killall "${APP_NAME}" 2>/dev/null || true
+        pkill -x -u "$(id -u)" "${APP_NAME}" || killall "${APP_NAME}" 2>/dev/null || true
         sleep 1
     fi
 
@@ -96,9 +96,9 @@ fi
 
 echo "[2/3] Installing to ${APP_PATH}..."
 # Stop existing app before replacing
-if pgrep -x "${APP_NAME}" > /dev/null; then
+if pgrep -x -u "$(id -u)" "${APP_NAME}" > /dev/null; then
     echo "--> Closing existing ${APP_NAME} instance..."
-    pkill -x "${APP_NAME}" || killall "${APP_NAME}" 2>/dev/null || true
+    pkill -x -u "$(id -u)" "${APP_NAME}" || killall "${APP_NAME}" 2>/dev/null || true
     sleep 1
 fi
 
