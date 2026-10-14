@@ -51,7 +51,7 @@ jobs:
           git fetch --tags || true
 
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            TAG_NAME="${github.ref#refs/tags/}"
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
             VERSION="${TAG_NAME#v}"
           else
             # Get latest tag
@@ -94,7 +94,10 @@ jobs:
         run: |
           VERSION="${{ steps.versioning.outputs.version }}"
           echo "Updating Info.plist to version ${VERSION}..."
-          sed -i '' "s/<string>1.0.0<\/string>/<string>${VERSION}<\/string>/g" Info.plist || true
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" Info.plist
+          # A release left at the 0.0.0 placeholder looks like a local build to the
+          # in-app updater and would never update again — fail rather than ship it.
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Info.plist)" = "${VERSION}"
 
       - name: Build macOS Application
         run: |

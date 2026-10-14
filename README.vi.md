@@ -46,16 +46,19 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Show Network Speeds**: Bật/tắt hiển thị cột tốc độ mạng.
   - **Show CPU Temperature**: Bật/tắt hiển thị cột nhiệt độ CPU.
   - **Launch at Login**: Bật/tắt tự động khởi động cùng macOS (dùng `SMAppService` cực mượt trên macOS 13+, và tự lùi về LaunchAgents plist cho các máy cũ hơn).
+  - **Install Updates Automatically**: Bật sẵn. Tắt đi thì bản mới chỉ hiện trong menu để bạn tự cài.
   - **Update Interval**: Chọn tốc độ làm mới dữ liệu (1 giây, 2 giây hoặc 5 giây).
   - **Temperature Unit**: Chuyển đổi giữa độ C và độ F.
   - **Menu Bar Temperature**: Chọn hiển thị nhiệt độ CPU trung bình hay cảm biến CPU nóng nhất trên thanh Menu.
   - **GitHub Repository**: Link nhanh về trang GitHub của project.
+  - **Check for Updates…**: Kiểm tra ngay trên GitHub xem có bản mới không.
   - **Quit MacStats**: Thoát app.
 - 🧠 **Cảm biến nhiệt độ SMC thông minh**: Tự động dò tìm các cảm biến nhiệt SMC tương thích với cả chip Intel lẫn Apple Silicon (M1/M2/M3/M4/M5). App sẽ check nhiệt độ các nhân P-core, E-core... và tính ra nhiệt độ trung bình cùng nhiệt độ cảm biến nóng nhất theo thời gian thực. Trên Apple Silicon, app phân biệt khóa giá trị tức thời và khóa giá trị đỉnh của từng cảm biến, đồng thời loại bỏ các khóa chỉ là giá trị cộng thêm độ lệch cố định (không phải số đo thật).
 - ⚡ **Tối ưu cực hạn cho hiệu năng & bộ nhớ**:
   - Ẩn mình hoàn toàn như một app nền (`LSUIElement`) – không hiện dưới Dock, không cản trở lúc bạn Command-Tab.
   - Chủ động dọn dẹp bộ nhớ (gọi `malloc_zone_pressure_relief`) lúc mới bật và đều đặn mỗi 30 giây để tránh rác RAM.
   - Tích hợp độ trễ hẹn giờ (timer tolerance khoảng 25%), giúp macOS gom nhóm các tác vụ ngầm lại với nhau để tối ưu pin.
+- 🔄 **Tự động cập nhật**: Mỗi ngày một lần, MacStats hỏi GitHub bản release mới nhất. Nếu có bản mới hơn, app tải `MacStats.zip`, kiểm tra (SHA-256, bundle ID, version, chữ ký code), thay thế tại chỗ rồi tự khởi động lại — không bao giờ trong lúc menu đang mở. Bản bạn tự build sẽ không tự cập nhật; dùng **Check for Updates…** nếu muốn chuyển sang bản release.
 - 🤖 **Tích hợp sẵn luồng CI/CD**: Workflow GitHub Actions tự động build app, tăng version tự động và tạo GitHub Release mỗi lần cập nhật code.
 
 ---

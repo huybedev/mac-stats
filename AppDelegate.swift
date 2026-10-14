@@ -6,6 +6,8 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     private var statsView: UnifiedStatsView!
     
     private let statsEngine = StatsEngine()
+    private let updater = Updater()
+    private var isMenuOpen = false
     private var timer: Timer?
     private var updateInterval: TimeInterval = 2.0
     
@@ -24,6 +26,10 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         setupStatusItem()
         startTimer()
         updateStats()
+
+        // Never restart for an update while the user is looking at the menu.
+        updater.shouldDeferRelaunch = { [weak self] in self?.isMenuOpen ?? false }
+        updater.start()
         
         // Purge transient startup heap back to OS after frameworks finish init
         perform(#selector(postStartupTrim), with: nil, afterDelay: 1.0)
@@ -155,6 +161,15 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         autoStartItem.target = self
         autoStartItem.state = isLaunchAtLoginEnabled ? .on : .off
         menu.addItem(autoStartItem)
+
+        let autoUpdateItem = NSMenuItem(title: "Install Updates Automatically", action: #selector(toggleAutoUpdate(_:)), keyEquivalent: "")
+        autoUpdateItem.target = self
+        autoUpdateItem.state = updater.installsAutomatically && !updater.isDevBuild ? .on : .off
+        if updater.isDevBuild {
+            autoUpdateItem.isEnabled = false
+            autoUpdateItem.toolTip = "Local builds don't update automatically."
+        }
+        menu.addItem(autoUpdateItem)
         
         let intervalSubmenu = NSMenu()
         let intervals: [(String, TimeInterval)] = [("1 second", 1.0), ("2 seconds", 2.0), ("5 seconds", 5.0)]
@@ -204,6 +219,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let githubItem = NSMenuItem(title: "GitHub Repository", action: #selector(openGitHubPage), keyEquivalent: "")
         githubItem.target = self
         menu.addItem(githubItem)
+        menu.addItem(updateMenuItem())
         
         menu.addItem(NSMenuItem.separator())
         
@@ -224,7 +240,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         statusItem.menu = menu
+        isMenuOpen = true
         statusItem.button?.performClick(nil)
+        isMenuOpen = false
         statusItem.menu = nil
     }
     
@@ -435,6 +453,38 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         return String(format: "%.0f°C", celsius)
     }
     
+    @objc private func toggleAutoUpdate(_ sender: NSMenuItem) {
+        updater.installsAutomatically.toggle()
+    }
+
+    /// "Check for Updates…", or the update's progress once one has been found.
+    private func updateMenuItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: "")
+        item.target = self
+        switch updater.state {
+        case .idle:
+            break
+        case .checking:
+            item.title = "Checking for Updates…"
+            item.isEnabled = false
+        case .available(let release):
+            item.title = "Update to \(release.version)"
+            item.action = #selector(installUpdate)
+        case .installing(let release):
+            item.title = "Installing \(release.version)…"
+            item.isEnabled = false
+        }
+        return item
+    }
+
+    @objc private func checkForUpdates() {
+        updater.checkForUpdates(userInitiated: true)
+    }
+
+    @objc private func installUpdate() {
+        updater.installAvailableUpdate()
+    }
+
     @objc private func openGitHubPage() {
         if let url = URL(string: "https://github.com/openhoangnc/mac-stats") {
             NSWorkspace.shared.open(url)

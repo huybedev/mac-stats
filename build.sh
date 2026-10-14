@@ -17,7 +17,7 @@ echo "=== Building ${APP_NAME} (Optimized, Universal) ==="
 echo "[1/4] Generating AppIcon.icns..."
 python3 generate_icon.py || echo "Warning: Icon generation failed, continuing..."
 
-SOURCES=(SMC.swift StatsEngine.swift StatusBarView.swift AppDelegate.swift main.swift)
+SOURCES=(SMC.swift StatsEngine.swift StatusBarView.swift Updater.swift AppDelegate.swift main.swift)
 COMMON_FLAGS=(-Osize -wmo -module-name MacStats -Xlinker -dead_strip \
     -framework AppKit -framework IOKit -framework Foundation)
 

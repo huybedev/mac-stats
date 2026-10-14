@@ -46,16 +46,19 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Show Network Speeds**: Toggle the visibility of the network speeds column.
   - **Show CPU Temperature**: Toggle the visibility of the CPU temperature column.
   - **Launch at Login**: Easily toggle automatic startup. (Seamlessly uses macOS 13+ `SMAppService`, with automatic fallbacks to LaunchAgents plist for older systems).
+  - **Install Updates Automatically**: On by default. Turn it off to have new versions offered in the menu instead of installed.
   - **Update Interval**: Customize how often data refreshes (1s, 2s, or 5s).
   - **Temperature Unit**: Switch effortlessly between Celsius and Fahrenheit.
   - **Menu Bar Temperature**: Show the CPU average or the hottest CPU sensor in the menu bar.
   - **GitHub Repository**: Direct link to the source code.
+  - **Check for Updates…**: Check GitHub for a newer release right now.
   - **Quit MacStats**: Safely close the app.
 - 🧠 **Dynamic SMC Temperature Scanning**: On startup, it automatically discovers active SMC temperature sensors for both Intel and Apple Silicon (M1/M2/M3/M4/M5) chips—including efficiency cores, performance cores, and general sensors—to calculate an accurate real-time average and hottest-sensor reading. On Apple Silicon, each sensor's live and peak keys are told apart, and the offset keys that are not real measurements are left out.
 - ⚡ **Deep Performance & Memory Optimizations**:
   - Runs entirely as a background accessory (`LSUIElement`). It stays out of your Dock and won't clutter your Command-Tab app switcher.
   - Actively prevents memory fragmentation by calling `malloc_zone_pressure_relief` on startup and every 30 seconds thereafter.
   - Implements a smart 25% timer tolerance, allowing macOS to coalesce background tasks and drastically save battery life.
+- 🔄 **Automatic Updates**: Once a day MacStats asks GitHub for the latest release. When there's a newer one, it downloads `MacStats.zip`, checks it (SHA-256 digest, bundle ID, version, code signature), swaps it in place and restarts—never while the menu is open. Builds you compile yourself never update on their own; use **Check for Updates…** to switch one to the release.
 - 🤖 **Automated CI/CD Workflows**: A built-in GitHub Actions pipeline automatically compiles the `.app`, increments semantic version numbers, and publishes new GitHub Releases.
 
 ---

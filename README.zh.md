@@ -46,16 +46,19 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Show Network Speeds (显示网速)**：切换是否显示网速列。
   - **Show CPU Temperature (显示CPU温度)**：切换是否显示CPU温度列。
   - **Launch at Login (开机启动)**：一键开启/关闭开机自启。macOS 13+ 使用原生的 `SMAppService`，老系统则自动降级使用 LaunchAgents plist。
+  - **Install Updates Automatically (自动安装更新)**：默认开启。关闭后，新版本只会显示在菜单中，由你手动安装。
   - **Update Interval (刷新频率)**：支持自定义刷新时间（1秒、2秒 或 5秒）。
   - **Temperature Unit (温度单位)**：切换摄氏度 (`°C`) 和华氏度 (`°F`)。
   - **Menu Bar Temperature (菜单栏温度)**：选择在菜单栏显示 CPU 平均温度或最热传感器温度。
   - **GitHub Repository**：直达本项目源码库。
+  - **Check for Updates… (检查更新)**：立即在 GitHub 上检查是否有新版本。
   - **Quit MacStats (退出)**：完全退出程序。
 - 🧠 **动态 SMC 温度传感器扫描**：启动时自动扫描适配的 Intel 和 Apple Silicon (M1/M2/M3/M4/M5) 温度传感器（智能遍历能效核、性能核及各类核心温度键值），精准计算出实时平均温度和最热传感器温度。在 Apple Silicon 上会区分每个传感器的实时键值与峰值键值，并剔除仅为固定偏移量、并非真实测量值的键值。
 - ⚡ **深度内存与性能优化**：
   - 作为后台辅助程序 (`LSUIElement`) 运行，不会在 Dock 栏出现，也不会在 Command-Tab 切换时打扰你。
   - 主动进行内存整理：在应用启动时及运行期间（每 30 秒）调用 `malloc_zone_pressure_relief`，彻底告别内存碎片和泄露。
   - 设置了合理的定时器容差 (Tolerance)，允许 macOS 将定时任务与其他系统事件合并执行，显著降低电池消耗。
+- 🔄 **自动更新**：每天向 GitHub 查询一次最新版本。发现新版本时，自动下载 `MacStats.zip`，校验（SHA-256 摘要、Bundle ID、版本号、代码签名）后原地替换并重启——菜单打开期间绝不重启。自行编译的版本不会自动更新；可通过 **Check for Updates…** 手动切换到正式版。
 - 🤖 **全自动的发布流水线 (CI/CD)**：借助 GitHub Actions，每次更新都会自动构建 `.app`、递增语义化版本号，并发布最新的 GitHub Release。
 
 ---

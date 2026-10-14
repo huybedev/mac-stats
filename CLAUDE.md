@@ -70,3 +70,28 @@ Pro's standalone `Tp0b`) is a plain reading and feeds both. Battery cells are `T
 To re-verify on another chip: enumerate SMC keys via `#KEY` + `readIndex`, and read the HID sensors
 (`IOHIDEventSystemClient`, usage page `0xff00` / usage `5`, event type 15) side by side while running
 `yes > /dev/null` on every core — the suffix offsets are constant, so two samples show them.
+
+## Auto-update — the release asset is a contract with every installed copy (2026-10-14)
+
+`Updater.swift` polls `api.github.com/repos/openhoangnc/mac-stats/releases/latest` once a day,
+downloads the asset named **`MacStats.zip`**, checks it (GitHub's `sha256` asset digest, bundle ID,
+`CFBundleShortVersionString` == tag minus `v`, `LSMinimumSystemVersion`, `codesign --verify --deep
+--strict`), swaps the whole bundle with `replaceItemAt` and relaunches. Installed copies hard-code
+that contract, so changing any of these in `release.yml` silently strands every user on their
+current version: the asset name, a top-level `MacStats.app/` inside the zip, `vX.Y.Z` tags, or the
+version stamp.
+
+⚠️ **`0.0.0` in `Info.plist` means "local build" and is load-bearing.** Local builds never check
+on their own (only via "Check for Updates…"), so `./install.sh` from a checkout isn't overwritten
+by the latest release a day later. CI stamps the real version with PlistBuddy and **fails the job**
+if the stamp didn't take — a release shipped as `0.0.0` would never auto-update again.
+
+Several macOS accounts on one Mac share `/Applications/MacStats.app`. The updater only replaces a
+bundle it can write and that still holds the version it's running; if another account already put
+a newer release there, it just relaunches into it, and it never auto-installs over a local build
+that someone else dropped in. Failures log to `log show --predicate 'subsystem == "com.openhoangnc.macstats"'`.
+
+To test end-to-end without a new release: copy a build somewhere writable, set its
+`CFBundleShortVersionString` below the latest release with PlistBuddy, re-sign ad-hoc
+(`codesign --force --deep --sign -`), clear `defaults delete com.openhoangnc.macstats
+lastUpdateCheck`, and `open -n` it — it checks 30s after launch, installs and relaunches.
