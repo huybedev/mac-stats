@@ -38,8 +38,9 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
 - 📊 **三列式菜单栏展示**：
   - **左列 (网络)**：实时显示 上传（上）和 下载（下）网速。单位自动缩放（`B`, `K`, `M`, `G`），并会根据当前网速动态变色。
   - **中列 (CPU/内存)**：显示 CPU 使用率（上）和 内存占用量 G（下）。当负载升高时颜色会自动从绿变红。
-  - **右列 (温度)**：显示 CPU 平均温度（上）和 温度单位（下）。颜色同样会根据温度高低自动变化。
+  - **右列 (温度)**：显示 CPU 温度（上，可选平均温度或最热传感器）和 温度单位（下）。颜色同样会根据温度高低自动变化。
 - 🔝 **一眼看清资源占用大户**：每次打开菜单，都会实时列出占用 **CPU** 和 **内存** 最多的应用。辅助进程（例如浏览器的众多渲染进程）会自动归并到其父应用下，后台系统守护进程则被过滤掉——让你只看到真正需要关注的应用。
+- 🌡️ **温度一目了然**：菜单中还会列出 **CPU 平均温度**、**CPU 最热传感器**温度（降频所依据的读数），以及 MacBook 的**电池**温度。
 - ⚙️ **快捷设置菜单**：左键或右键点击菜单栏图标即可唤出：
   - **Open Activity Monitor (打开活动监视器)**：一键跳转到 macOS 活动监视器，查看完整详细的资源占用情况。
   - **Show Network Speeds (显示网速)**：切换是否显示网速列。
@@ -47,9 +48,10 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Launch at Login (开机启动)**：一键开启/关闭开机自启。macOS 13+ 使用原生的 `SMAppService`，老系统则自动降级使用 LaunchAgents plist。
   - **Update Interval (刷新频率)**：支持自定义刷新时间（1秒、2秒 或 5秒）。
   - **Temperature Unit (温度单位)**：切换摄氏度 (`°C`) 和华氏度 (`°F`)。
+  - **Menu Bar Temperature (菜单栏温度)**：选择在菜单栏显示 CPU 平均温度或最热传感器温度。
   - **GitHub Repository**：直达本项目源码库。
   - **Quit MacStats (退出)**：完全退出程序。
-- 🧠 **动态 SMC 温度传感器扫描**：启动时自动扫描适配的 Intel 和 Apple Silicon (M1/M2/M3/M4/M5) 温度传感器（智能遍历能效核、性能核及各类核心温度键值），精准计算出实时平均温度。
+- 🧠 **动态 SMC 温度传感器扫描**：启动时自动扫描适配的 Intel 和 Apple Silicon (M1/M2/M3/M4/M5) 温度传感器（智能遍历能效核、性能核及各类核心温度键值），精准计算出实时平均温度和最热传感器温度。在 Apple Silicon 上会区分每个传感器的实时键值与峰值键值，并剔除仅为固定偏移量、并非真实测量值的键值。
 - ⚡ **深度内存与性能优化**：
   - 作为后台辅助程序 (`LSUIElement`) 运行，不会在 Dock 栏出现，也不会在 Command-Tab 切换时打扰你。
   - 主动进行内存整理：在应用启动时及运行期间（每 30 秒）调用 `malloc_zone_pressure_relief`，彻底告别内存碎片和泄露。

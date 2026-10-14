@@ -8,7 +8,10 @@ public struct CPUStats {
     public var systemPercent: Double = 0.0
     public var idlePercent: Double = 0.0
     public var coreCount: Int = 0
+    /// Mean across CPU sensors. 0 when no sensor is readable.
     public var temperature: Double = 0.0
+    /// Hottest CPU sensor — the reading thermal throttling acts on. 0 when no sensor is readable.
+    public var maxTemperature: Double = 0.0
 }
 
 public struct MemoryStats {
@@ -62,25 +65,57 @@ public class StatsEngine {
     private var prevNetTime: CFAbsoluteTime = 0
     private var cachedActiveInterface: String = "en0"
     
+    /// An active CPU temperature key and which statistics it feeds.
+    private struct TempSensor {
+        let key: String
+        let inAverage: Bool
+        let inMax: Bool
+    }
+
     // Active temperature keys cached after startup scan
-    private var activeTempKeys: [String] = []
+    private var tempSensors: [TempSensor] = []
+    private var batteryTempKeys: [String] = []
 
     public init() {
         var pageSize: vm_size_t = 4096
         host_page_size(hostPort, &pageSize)
         cachedPageSize = UInt64(pageSize)
         
-        self.activeTempKeys = scanActiveTempKeys()
+        self.tempSensors = scanTempSensors()
+        self.batteryTempKeys = scanBatteryTempKeys()
     }
-    
-    private func scanActiveTempKeys() -> [String] {
+
+    private static func isValidCPUTemp(_ val: Double) -> Bool {
+        return val > 15.0 && val < 110.0
+    }
+
+    // A cold battery legitimately reads below the CPU floor of 15°C.
+    private static func isValidBatteryTemp(_ val: Double) -> Bool {
+        return val > 0.0 && val < 100.0
+    }
+
+    /// Battery cell sensors (the same TB*T keys on Intel and Apple Silicon).
+    /// Empty on Macs without a battery, which hides the reading.
+    private func scanBatteryTempKeys() -> [String] {
+        let smc = SMC.shared
+        return ["TB0T", "TB1T", "TB2T"].filter { key in
+            guard let val = smc.getValue(key) else { return false }
+            return Self.isValidBatteryTemp(val)
+        }
+    }
+
+    private func scanTempSensors() -> [TempSensor] {
         let smc = SMC.shared
         func isActive(_ key: String) -> Bool {
             guard let val = smc.getValue(key) else { return false }
-            return val > 15.0 && val < 110.0
+            return Self.isValidCPUTemp(val)
+        }
+        // Keys with no a/b/x/z siblings are a single plain reading.
+        func plain(_ keys: [String]) -> [TempSensor] {
+            return keys.map { TempSensor(key: $0, inAverage: true, inMax: true) }
         }
 
-        // Apple Silicon per-core / cluster sensors, averaged together.
+        // Apple Silicon per-core / cluster sensors.
         let appleSiliconKeys = [
             // Base/General M1/M2/M3/M4/M5 CPU keys
             "Tc0a", "Tc0b", "Tc0x", "Tc0z",
@@ -114,25 +149,47 @@ public class StatsEngine {
             "Tp9a", "Tp9b", "Tp9x", "Tp9z"
         ]
         
-        let appleSiliconActive = appleSiliconKeys.filter(isActive)
-        if !appleSiliconActive.isEmpty { return appleSiliconActive }
+        // Keys sharing a stem in an a/b/x/z set (Tp2a, Tp2b, Tp2x, Tp2z) are
+        // not four sensors but four views of one. Measured on an M1 against the
+        // named HID sensors (pACC/eACC MTR) and the PMU die sensors:
+        //   a — live reading (tracks the HID sensor)
+        //   x — recent peak (2–6°C above `a`, holds after load drops)
+        //   b, z — `a` and `x` plus a fixed per-sensor offset (9–16°C on P-cores,
+        //          constant across load), so not a measurement; excluded.
+        // The average uses `a`, the max uses `x`. A stem without both `a` and `x`
+        // (e.g. M1 Pro's standalone Tp0b) is a plain reading.
+        let appleSiliconActive = Set(appleSiliconKeys.filter(isActive))
+        if !appleSiliconActive.isEmpty {
+            var sensors: [TempSensor] = []
+            for key in appleSiliconKeys where appleSiliconActive.contains(key) {
+                let stem = String(key.dropLast())
+                let isSet = appleSiliconActive.contains(stem + "a") && appleSiliconActive.contains(stem + "x")
+                switch (isSet, key.last) {
+                case (true, "a"): sensors.append(TempSensor(key: key, inAverage: true, inMax: false))
+                case (true, "x"): sensors.append(TempSensor(key: key, inAverage: false, inMax: true))
+                case (true, _): break
+                default: sensors += plain([key])
+                }
+            }
+            return sensors
+        }
 
         // --- Intel Macs ---
-        // Prefer the per-core die sensors, averaged together (mirrors the
-        // Apple Silicon path above). Both upper- and lower-case suffixes
-        // appear depending on the model; only one set is ever active.
+        // Prefer the per-core die sensors (mirrors the Apple Silicon path
+        // above). Both upper- and lower-case suffixes appear depending on the
+        // model; only one set is ever active.
         let intelCoreKeys = [
             "TC0C", "TC1C", "TC2C", "TC3C", "TC4C", "TC5C", "TC6C", "TC7C", "TC8C", "TC9C",
             "TC0c", "TC1c", "TC2c", "TC3c", "TC4c", "TC5c", "TC6c", "TC7c", "TC8c", "TC9c"
         ]
         let intelCoreActive = intelCoreKeys.filter(isActive)
-        if !intelCoreActive.isEmpty { return intelCoreActive }
+        if !intelCoreActive.isEmpty { return plain(intelCoreActive) }
 
         // Fall back to a single summary sensor, in order of preference:
         // on-die diode, package, proximity, then heatsink.
         let intelFallbackKeys = ["TC0D", "TC0E", "TC0F", "TCAD", "TC0P", "TC0H"]
         if let key = intelFallbackKeys.first(where: isActive) {
-            return [key]
+            return plain([key])
         }
         return []
     }
@@ -195,23 +252,42 @@ public class StatsEngine {
         self.prevCpuInfo = cpuInfo
         self.prevCpuInfoCount = cpuInfoCount
         
-        // Calculate CPU average temperature
-        if !activeTempKeys.isEmpty {
+        // Calculate CPU average and hottest-sensor temperature
+        if !tempSensors.isEmpty {
             var sum: Double = 0.0
             var count = 0
+            var hottest: Double = 0.0
             let smc = SMC.shared
-            for key in activeTempKeys {
-                if let val = smc.getValue(key), val > 15.0 && val < 110.0 {
+            for sensor in tempSensors {
+                guard let val = smc.getValue(sensor.key), Self.isValidCPUTemp(val) else { continue }
+                if sensor.inAverage {
                     sum += val
                     count += 1
+                }
+                if sensor.inMax {
+                    hottest = max(hottest, val)
                 }
             }
             if count > 0 {
                 stats.temperature = sum / Double(count)
             }
+            stats.maxTemperature = hottest
         }
         
         return stats
+    }
+
+    // MARK: - Battery Sampling
+    /// Hottest battery cell sensor in °C, or 0 when the Mac has no battery sensor.
+    public func fetchBatteryTemperature() -> Double {
+        let smc = SMC.shared
+        var hottest: Double = 0.0
+        for key in batteryTempKeys {
+            if let val = smc.getValue(key), Self.isValidBatteryTemp(val) {
+                hottest = max(hottest, val)
+            }
+        }
+        return hottest
     }
 
     // MARK: - Memory Sampling

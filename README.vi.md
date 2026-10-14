@@ -38,8 +38,9 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
 - 📊 **Hiển thị 3 cột thông tin trực quan**:
   - **Cột Trái (Mạng)**: Tốc độ Upload (dòng trên) và Download (dòng dưới). Đơn vị tự động thay đổi (`B`, `K`, `M`, `G`) và màu sắc cảnh báo theo băng thông.
   - **Cột Giữa (CPU & RAM)**: % CPU (dòng trên) và mức RAM đang dùng tính bằng GB (dòng dưới). Màu sắc tự động đổi (xanh/vàng/đỏ) khi hệ thống tải nặng.
-  - **Cột Phải (Nhiệt độ)**: Nhiệt độ trung bình của CPU (dòng trên) và đơn vị (`°C` hoặc `°F`) (dòng dưới), cũng đổi màu linh hoạt theo độ nóng.
+  - **Cột Phải (Nhiệt độ)**: Nhiệt độ CPU (dòng trên) — trung bình, hoặc cảm biến nóng nhất tùy bạn chọn — và đơn vị (`°C` hoặc `°F`) (dòng dưới), cũng đổi màu linh hoạt theo độ nóng.
 - 🔝 **Xem ngay ứng dụng "ngốn" tài nguyên**: Mỗi khi mở menu, app hiển thị ngay top các ứng dụng đang chiếm nhiều **CPU** và **RAM** nhất theo thời gian thực. Các tiến trình phụ (ví dụ hàng loạt renderer của trình duyệt) được gộp chung về ứng dụng cha, còn các tiến trình hệ thống chạy ngầm sẽ bị lọc bỏ — nên bạn chỉ thấy đúng những ứng dụng thực sự đáng quan tâm.
+- 🌡️ **Xem nhanh nhiệt độ**: Menu còn hiển thị nhiệt độ **CPU trung bình**, **CPU nóng nhất** (con số mà cơ chế giảm xung nhiệt dựa vào) và nhiệt độ **pin** trên MacBook.
 - ⚙️ **Menu Cài đặt nhanh**: Click chuột trái/phải vào icon trên thanh Menu để mở:
   - **Open Activity Monitor**: Mở nhanh Activity Monitor của macOS để xem chi tiết đầy đủ.
   - **Show Network Speeds**: Bật/tắt hiển thị cột tốc độ mạng.
@@ -47,9 +48,10 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Launch at Login**: Bật/tắt tự động khởi động cùng macOS (dùng `SMAppService` cực mượt trên macOS 13+, và tự lùi về LaunchAgents plist cho các máy cũ hơn).
   - **Update Interval**: Chọn tốc độ làm mới dữ liệu (1 giây, 2 giây hoặc 5 giây).
   - **Temperature Unit**: Chuyển đổi giữa độ C và độ F.
+  - **Menu Bar Temperature**: Chọn hiển thị nhiệt độ CPU trung bình hay cảm biến CPU nóng nhất trên thanh Menu.
   - **GitHub Repository**: Link nhanh về trang GitHub của project.
   - **Quit MacStats**: Thoát app.
-- 🧠 **Cảm biến nhiệt độ SMC thông minh**: Tự động dò tìm các cảm biến nhiệt SMC tương thích với cả chip Intel lẫn Apple Silicon (M1/M2/M3/M4/M5). App sẽ check nhiệt độ các nhân P-core, E-core... và tính ra nhiệt độ trung bình chuẩn xác nhất theo thời gian thực.
+- 🧠 **Cảm biến nhiệt độ SMC thông minh**: Tự động dò tìm các cảm biến nhiệt SMC tương thích với cả chip Intel lẫn Apple Silicon (M1/M2/M3/M4/M5). App sẽ check nhiệt độ các nhân P-core, E-core... và tính ra nhiệt độ trung bình cùng nhiệt độ cảm biến nóng nhất theo thời gian thực. Trên Apple Silicon, app phân biệt khóa giá trị tức thời và khóa giá trị đỉnh của từng cảm biến, đồng thời loại bỏ các khóa chỉ là giá trị cộng thêm độ lệch cố định (không phải số đo thật).
 - ⚡ **Tối ưu cực hạn cho hiệu năng & bộ nhớ**:
   - Ẩn mình hoàn toàn như một app nền (`LSUIElement`) – không hiện dưới Dock, không cản trở lúc bạn Command-Tab.
   - Chủ động dọn dẹp bộ nhớ (gọi `malloc_zone_pressure_relief`) lúc mới bật và đều đặn mỗi 30 giây để tránh rác RAM.

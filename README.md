@@ -38,8 +38,9 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
 - 📊 **Triple-Column Menu Bar Display**:
   - **Left (Network)**: Real-time Upload (top) and Download (bottom) speeds. Units scale automatically (`B`, `K`, `M`, `G`), and colors adapt dynamically to bandwidth usage.
   - **Center (CPU/Memory)**: Live CPU load (`%`, top) and RAM usage (`G`, bottom). Smart color thresholds (Green → Yellow → Red) instantly warn you under heavy load.
-  - **Right (Temperature)**: Average CPU temperature (top) and unit (`°C` or `°F`, bottom). Text colors shift dynamically based on heat levels.
+  - **Right (Temperature)**: CPU temperature (top) — the average, or the hottest sensor if you prefer — and unit (`°C` or `°F`, bottom). Text colors shift dynamically based on heat levels.
 - 🔝 **Top Resource Hogs at a Glance**: Opening the menu instantly reveals the apps consuming the most **CPU** and **memory**, ranked in real time. Helper processes (like a browser's many renderers) are rolled up into their parent app, and background system daemons are filtered out—so you only see the apps that actually matter.
+- 🌡️ **Temperatures at a Glance**: The menu also lists the **CPU average**, the **CPU hottest** sensor (the reading thermal throttling reacts to), and the **battery** temperature on MacBooks.
 - ⚙️ **Quick Settings Menu**: Left or right-click the menu bar icon to access:
   - **Open Activity Monitor**: Jump straight to macOS Activity Monitor for the full, detailed breakdown.
   - **Show Network Speeds**: Toggle the visibility of the network speeds column.
@@ -47,9 +48,10 @@ curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstal
   - **Launch at Login**: Easily toggle automatic startup. (Seamlessly uses macOS 13+ `SMAppService`, with automatic fallbacks to LaunchAgents plist for older systems).
   - **Update Interval**: Customize how often data refreshes (1s, 2s, or 5s).
   - **Temperature Unit**: Switch effortlessly between Celsius and Fahrenheit.
+  - **Menu Bar Temperature**: Show the CPU average or the hottest CPU sensor in the menu bar.
   - **GitHub Repository**: Direct link to the source code.
   - **Quit MacStats**: Safely close the app.
-- 🧠 **Dynamic SMC Temperature Scanning**: On startup, it automatically discovers active SMC temperature sensors for both Intel and Apple Silicon (M1/M2/M3/M4/M5) chips—including efficiency cores, performance cores, and general sensors—to calculate a highly accurate real-time average.
+- 🧠 **Dynamic SMC Temperature Scanning**: On startup, it automatically discovers active SMC temperature sensors for both Intel and Apple Silicon (M1/M2/M3/M4/M5) chips—including efficiency cores, performance cores, and general sensors—to calculate an accurate real-time average and hottest-sensor reading. On Apple Silicon, each sensor's live and peak keys are told apart, and the offset keys that are not real measurements are left out.
 - ⚡ **Deep Performance & Memory Optimizations**:
   - Runs entirely as a background accessory (`LSUIElement`). It stays out of your Dock and won't clutter your Command-Tab app switcher.
   - Actively prevents memory fragmentation by calling `malloc_zone_pressure_relief` on startup and every 30 seconds thereafter.

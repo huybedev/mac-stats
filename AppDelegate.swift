@@ -72,7 +72,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         
         statsView.updateValues(
             cpuPercent: currentCpuStats.usagePercent,
-            cpuTemperature: currentCpuStats.temperature,
+            cpuTemperature: menuBarTemperature == "max" ? currentCpuStats.maxTemperature : currentCpuStats.temperature,
             tempUnit: tempUnit,
             memGB: currentMemStats.usedGB,
             memPercent: currentMemStats.usedPercent,
@@ -93,11 +93,25 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         // Manage item enabled-state ourselves so info rows stay legible (not greyed).
         menu.autoenablesItems = false
 
-        // --- Top Processes Section ---
-        // Fetched fresh on open; excludes system daemons and rolls helpers into their app.
-        // Rows start as plain items so the menu can compute its natural width; below
+        // Info rows start as plain items so the menu can compute its natural width; below
         // we swap in width-filling views that right-align the value flush to that width.
         var usageRows: [(item: NSMenuItem, name: String, value: String)] = []
+
+        // --- Temperature Section ---
+        // CPU readings are from the last tick; battery is read fresh on open.
+        let tempRows = temperatureRows()
+        if !tempRows.isEmpty {
+            menu.addItem(Self.sectionHeader("Temperature"))
+            for row in tempRows {
+                let item = Self.provisionalUsageItem(name: row.name, value: row.value)
+                menu.addItem(item)
+                usageRows.append((item, row.name, row.value))
+            }
+            menu.addItem(NSMenuItem.separator())
+        }
+
+        // --- Top Processes Section ---
+        // Fetched fresh on open; excludes system daemons and rolls helpers into their app.
         let top = statsEngine.fetchTopProcesses(limit: 3)
         if !top.byCPU.isEmpty {
             menu.addItem(Self.sectionHeader("Top CPU"))
@@ -170,6 +184,20 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         tempUnitItem.submenu = tempUnitSubmenu
         menu.addItem(tempUnitItem)
         
+        let menuBarTempSubmenu = NSMenu()
+        let menuBarTemps = [("CPU Average", "average"), ("CPU Hottest", "max")]
+        for (label, key) in menuBarTemps {
+            let item = NSMenuItem(title: label, action: #selector(changeMenuBarTemperature(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = key
+            item.state = (menuBarTemperature == key) ? .on : .off
+            menuBarTempSubmenu.addItem(item)
+        }
+
+        let menuBarTempItem = NSMenuItem(title: "Menu Bar Temperature", action: nil, keyEquivalent: "")
+        menuBarTempItem.submenu = menuBarTempSubmenu
+        menu.addItem(menuBarTempItem)
+
         menu.addItem(NSMenuItem.separator())
 
         // GitHub Link
@@ -185,7 +213,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(quitItem)
         
         // Now that every item is present, the menu's width is final. Replace each
-        // provisional process row with a view that fills that width and pins its
+        // provisional info row with a view that fills that width and pins its
         // value to the right edge — so the value column aligns with no trailing gap.
         if !usageRows.isEmpty {
             let width = menu.size.width
@@ -366,6 +394,46 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             tempUnit = unit
         }
     }
+
+    /// Which CPU reading the menu bar shows: "average" (default) or "max" (hottest sensor).
+    private var menuBarTemperature: String {
+        get {
+            return UserDefaults.standard.string(forKey: "menuBarTemperature") ?? "average"
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "menuBarTemperature")
+            updateStats()
+        }
+    }
+
+    @objc private func changeMenuBarTemperature(_ sender: NSMenuItem) {
+        if let key = sender.representedObject as? String {
+            menuBarTemperature = key
+        }
+    }
+
+    /// Dropdown rows for each available reading; sensors the Mac lacks are omitted.
+    private func temperatureRows() -> [(name: String, value: String)] {
+        var rows: [(name: String, value: String)] = []
+        if currentCpuStats.temperature > 0 {
+            rows.append(("CPU Average", formatTemperature(currentCpuStats.temperature)))
+        }
+        if currentCpuStats.maxTemperature > 0 {
+            rows.append(("CPU Hottest", formatTemperature(currentCpuStats.maxTemperature)))
+        }
+        let battery = statsEngine.fetchBatteryTemperature()
+        if battery > 0 {
+            rows.append(("Battery", formatTemperature(battery)))
+        }
+        return rows
+    }
+
+    private func formatTemperature(_ celsius: Double) -> String {
+        if tempUnit == "F" {
+            return String(format: "%.0f°F", celsius * 1.8 + 32.0)
+        }
+        return String(format: "%.0f°C", celsius)
+    }
     
     @objc private func openGitHubPage() {
         if let url = URL(string: "https://github.com/openhoangnc/mac-stats") {
@@ -387,7 +455,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         NSApplication.shared.terminate(nil)
     }
 
-    // MARK: - Top Processes menu rendering
+    // MARK: - Info row menu rendering
 
     private static func sectionHeader(_ title: String) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")

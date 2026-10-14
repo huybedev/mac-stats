@@ -49,3 +49,24 @@ fast-forward `main` from `dev` with byte-identical commits, so a shared token re
 every promotion. The condition is kept identical across all eleven repos in `~/priv` so there is one
 rule to remember. Full reasoning: `~/priv/shopify-order-printer/docs/implementation-log.md` D-208
 and D-210.
+
+## Temperature sensors — Apple Silicon SMC key suffixes (2026-10-14)
+
+On Apple Silicon a stem with an `a`/`b`/`x`/`z` set (`Tp2a`, `Tp2b`, `Tp2x`, `Tp2z`) is **one
+sensor, four views**, not four sensors. Measured on an M1 MacBook Air (macOS 26) against the named HID
+thermal sensors and the PMU die sensors, idle and under full load:
+
+| Suffix | Meaning | Used for |
+|---|---|---|
+| `a` | live reading — tracks HID `pACC/eACC MTR Temp Sensor<n>` within ~0.5°C | **average** |
+| `x` | recent peak — 2–6°C above `a`, holds after load drops; tracks `PMU tdie` | **max (hottest)** |
+| `b` / `z` | `a` / `x` **plus a fixed per-sensor offset** (9–16°C on P-cores, constant under load) | nothing |
+
+⚠️ **Never put `b`/`z` back into the average.** Averaging all four read ~4.6°C high on the M1 — the
+displayed "average" was really closer to the hottest core. A stem *without* both `a` and `x` (e.g. M1
+Pro's standalone `Tp0b`) is a plain reading and feeds both. Battery cells are `TB0T`/`TB1T`/`TB2T`
+(match HID `gas gauge battery`); absent on desktops.
+
+To re-verify on another chip: enumerate SMC keys via `#KEY` + `readIndex`, and read the HID sensors
+(`IOHIDEventSystemClient`, usage page `0xff00` / usage `5`, event type 15) side by side while running
+`yes > /dev/null` on every core — the suffix offsets are constant, so two samples show them.
