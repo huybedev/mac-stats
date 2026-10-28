@@ -1,139 +1,114 @@
-# MacStats 📊
+# MacStats
 
-> A lightning-fast, native macOS Menu Bar monitor built with Swift. Keep an eye on your CPU usage, RAM consumption, network speeds, and CPU temperature in real time—right at a glance.
+[Tiếng Việt](README.vi.md) | **English** | [简体中文](README.zh.md)
 
-🌐 [English](README.md) | [Tiếng Việt](README.vi.md) | [简体中文](README.zh.md) | [日本語](README.ja.md)
+A native Swift app for monitoring your Mac from the menu bar, with MacFan integrated as **Fan Control** in the same application.
 
-![macOS 11.0+](https://img.shields.io/badge/macOS-11.0%2B-blue?logo=apple)
-![Swift](https://img.shields.io/badge/Swift-5.0-orange?logo=swift)
-![License](https://img.shields.io/badge/License-MIT-green)
+![MacStats menu bar monitor](screenshot.png)
 
-![MacStats Screenshot](screenshot.png)
+## Features
 
+- CPU usage, memory usage, upload/download speeds, and CPU temperature in the menu bar.
+- CPU average, hottest CPU sensor, and battery temperature where available.
+- Top CPU and memory consumers, with helper processes grouped under their parent app.
+- Configurable display columns, Celsius/Fahrenheit, average/hottest menu bar temperature, and 1/2/5-second monitoring intervals.
+- Launch at login, an Activity Monitor shortcut, and release update controls.
+- **Fan Control:** CPU/GPU temperatures, current and target fan RPM, fixed RPM, editable CPU curves, Quiet/Balanced/Cool presets, and up to three minutes of CPU temperature history.
+- Vietnamese, English, and Simplified Chinese in the Fan Control dashboard. The main monitoring menu uses English.
 
-## Fan Control
+## Requirements
 
-Open **Fan Control…** from the MacStats menu to use the integrated MacFan dashboard: live CPU/GPU temperatures, fan RPM, fixed RPM, editable CPU curves, Quiet/Balanced/Cool presets, and a three-minute temperature history. The dashboard supports Vietnamese, English, and Simplified Chinese. Launch at login remains in the main MacStats menu; **Enable CPU curve on launch** is configured in Fan Control. Closing this window keeps fan control running in MacStats.
+| Component | Requirements |
+| --- | --- |
+| System monitoring | macOS 11+, Intel or Apple Silicon; sensor availability depends on the model |
+| Fan Control | macOS 14+, Apple M4 family; the inherited sensor map was validated on Mac mini M4, other models remain unverified |
+| Changing fan settings | Install the bundled privileged helper and authenticate with macOS |
+| Building | macOS with Xcode Command Line Tools and a macOS 14+ SDK; Python 3 for icon generation |
 
-Fan Control requires **macOS 14+ and Apple M4**; the existing monitor still runs on macOS 11+ on Intel and Apple Silicon. The inherited sensor map was tested by MacFan on Mac mini M4; other models are unverified. Install the bundled helper from the dashboard and authenticate with macOS to enable control. Read-only monitoring works without it. After replacing or updating MacStats, use **Update helper** to trust the new app signature. This helper is separate from the standalone MacFan helper; return that app to Auto before switching.
+The monitor and helper are built as universal `arm64` + `x86_64` binaries. Fan Control is disabled on unsupported systems; the monitor remains available. The project uses system frameworks and does not require an Xcode project or third-party Swift packages.
 
-Targets stay within each fan's hardware limits. CPU or GPU at 90°C requests maximum speed. Disconnect, a missed heartbeat, sensor/write failure, sleep, or quitting requests a return to macOS; failed recovery is journaled and retried. These mechanisms have automated tests with simulated hardware; real sleep/wake and induced overheating have not been verified. Control never starts automatically unless you enable the launch option.
+## Build and run
 
-Use **Remove helper…** in the dashboard to remove fan control. Both `uninstall.sh` and `install.sh --uninstall` also remove an installed MacStats fan helper, requesting administrator authentication; if recovery fails, they retain it for retries. Helper files use `com.openhoangnc.macstats.FanHelper` under `/Library/PrivilegedHelperTools` and `/Library/LaunchDaemons`, with recovery state under `/Library/Application Support/MacStats/FanControl`.
+Build from this repository to use the integrated Fan Control feature:
 
 ```sh
-bash test.sh                         # behavioral tests with simulated hardware; no fan writes
-open MacStats.app --args --fan-control
-MacStats.app/Contents/Resources/MacStatsFanHelper --probe  # read-only hardware snapshot
+git clone https://github.com/huybedev/mac-stats.git
+cd mac-stats
+./build.sh
+open MacStats.app
 ```
 
-The SMC implementation includes work based on Stats (MIT); its license is in `FanControl/Resources/Stats-LICENSE.txt` and is bundled with the app.
+To build, replace `/Applications/MacStats.app`, and launch it in one step, run from the checkout:
 
-
----
-
-## ⚡ Quick Start
-
-### 📦 One-Line Download & Install
-Just copy and paste this command into your Terminal. It will automatically download, extract, and install **MacStats** directly into your `/Applications` folder:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.sh | bash
+```sh
+./install.sh
 ```
 
----
+This requires write access to `/Applications`. A local `install.sh` builds the local source; it does not download a release. The app stays in the menu bar without a Dock icon. Left- or right-click its display to open the menu.
 
-### 🗑️ Complete Uninstallation
-Want to remove it completely? This command safely stops the app, removes it from your startup items, clears your user preferences, and deletes the app bundle:
+## Use Fan Control
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstall.sh | bash
+1. Choose **Fan Control…** in the MacStats menu. Temperatures and RPM can be monitored without the helper.
+2. Choose **Install helper** and complete the macOS administrator prompt to enable control.
+3. Select **macOS automatic**, **CPU temperature**, or **Fixed RPM**. Edit the curve or target, then click **Apply**. Configuration is saved after a successful apply.
+4. Click **Return to macOS** to release control. Closing the window keeps MacStats and fan control running; quitting requests a return to macOS.
+
+Use **Language** in the dashboard to select Vietnamese, English, or Simplified Chinese. **Launch at Login** remains in the main MacStats menu. **Enable CPU curve on launch** is off by default; enable it after applying a suitable curve. Otherwise, control starts only when you apply settings. After sleep, apply again to resume control.
+
+Curve temperatures use Celsius and the hottest CPU sensor. Each fan's curve percentage maps to its own hardware range: 0% is minimum RPM, 100% is maximum RPM, with linear interpolation between points. Cooling demand rises immediately and decreases by at most 150 RPM per two-second cycle. Fixed RPM is also bounded by each fan's limits. The dashboard refreshes every two seconds independently of the monitoring interval.
+
+### Helper and recovery
+
+The helper uses a separate XPC service with bounded status, configure, and release operations. The app and helper verify each other's code signatures. After replacing or updating MacStats, choose **Update helper** to synchronize the trusted signatures. This helper is separate from standalone MacFan; return MacFan or another fan utility to Auto before switching.
+
+CPU or GPU at 90°C requests maximum speed in either custom mode. Quit, disconnect, a heartbeat missing for more than 12 seconds, sensor/read/write failures, and sleep trigger attempts to return control to macOS. A recovery journal allows retries after failed restoration or helper restart. These mechanisms do not establish guarantees for firmware failures or power loss. Real fan writes, sleep/wake, and induced overheating have not been verified for this integration.
+
+Installed helper files:
+
+```text
+/Library/PrivilegedHelperTools/com.openhoangnc.macstats.FanHelper
+/Library/LaunchDaemons/com.openhoangnc.macstats.FanHelper.plist
+/Library/Application Support/MacStats/FanControl/
 ```
 
----
+Choose **Remove helper…** in the dashboard to remove it while retaining monitoring. If restoration cannot be confirmed, the uninstaller retains the helper and journal so recovery can be retried. Local builds use ad hoc signing and are not notarized by Apple.
 
-## ✨ Key Features
+## Updates
 
-- 🚀 **Ultra-Lightweight & Blazing Fast**: Written entirely in native Swift, guaranteeing a minimal memory and CPU footprint. No bloated Xcode projects or heavy third-party dependencies.
-- 📊 **Triple-Column Menu Bar Display**:
-  - **Left (Network)**: Real-time Upload (top) and Download (bottom) speeds. Units scale automatically (`B`, `K`, `M`, `G`), and colors adapt dynamically to bandwidth usage.
-  - **Center (CPU/Memory)**: Live CPU load (`%`, top) and RAM usage (`G`, bottom). Smart color thresholds (Green → Yellow → Red) instantly warn you under heavy load.
-  - **Right (Temperature)**: CPU temperature (top) — the average, or the hottest sensor if you prefer — and unit (`°C` or `°F`, bottom). Text colors shift dynamically based on heat levels.
-- 🔝 **Top Resource Hogs at a Glance**: Opening the menu instantly reveals the apps consuming the most **CPU** and **memory**, ranked in real time. Helper processes (like a browser's many renderers) are rolled up into their parent app, and background system daemons are filtered out—so you only see the apps that actually matter.
-- 🌡️ **Temperatures at a Glance**: The menu also lists the **CPU average**, the **CPU hottest** sensor (the reading thermal throttling reacts to), and the **battery** temperature on MacBooks.
-- ⚙️ **Quick Settings Menu**: Left or right-click the menu bar icon to access:
-  - **Open Activity Monitor**: Jump straight to macOS Activity Monitor for the full, detailed breakdown.
-  - **Show Network Speeds**: Toggle the visibility of the network speeds column.
-  - **Show CPU Temperature**: Toggle the visibility of the CPU temperature column.
-  - **Launch at Login**: Easily toggle automatic startup. (Seamlessly uses macOS 13+ `SMAppService`, with automatic fallbacks to LaunchAgents plist for older systems).
-  - **Install Updates Automatically**: On by default. Turn it off to have new versions offered in the menu instead of installed.
-  - **Update Interval**: Customize how often data refreshes (1s, 2s, or 5s).
-  - **Temperature Unit**: Switch effortlessly between Celsius and Fahrenheit.
-  - **Menu Bar Temperature**: Show the CPU average or the hottest CPU sensor in the menu bar.
-  - **GitHub Repository**: Direct link to the source code.
-  - **Check for Updates…**: Check GitHub for a newer release right now.
-  - **Quit MacStats**: Safely close the app.
-- 🧠 **Dynamic SMC Temperature Scanning**: On startup, it automatically discovers active SMC temperature sensors for both Intel and Apple Silicon (M1/M2/M3/M4/M5) chips—including efficiency cores, performance cores, and general sensors—to calculate an accurate real-time average and hottest-sensor reading. On Apple Silicon, each sensor's live and peak keys are told apart, and the offset keys that are not real measurements are left out.
-- ⚡ **Deep Performance & Memory Optimizations**:
-  - Runs entirely as a background accessory (`LSUIElement`). It stays out of your Dock and won't clutter your Command-Tab app switcher.
-  - Actively prevents memory fragmentation by calling `malloc_zone_pressure_relief` on startup and every 30 seconds thereafter.
-  - Implements a smart 25% timer tolerance, allowing macOS to coalesce background tasks and drastically save battery life.
-- 🔄 **Automatic Updates**: Once a day MacStats asks GitHub for the latest release. When there's a newer one, it downloads `MacStats.zip`, checks it (SHA-256 digest, bundle ID, version, code signature), swaps it in place and restarts—never while the menu is open. Builds you compile yourself never update on their own; use **Check for Updates…** to switch one to the release.
-- 🤖 **Automated CI/CD Workflows**: A built-in GitHub Actions pipeline automatically compiles the `.app`, increments semantic version numbers, and publishes new GitHub Releases.
+Release builds check for updates daily. **Install Updates Automatically** controls automatic installation; **Check for Updates…** checks manually. Local builds carry version `0.0.0` and never check automatically.
 
----
+The download path in `install.sh`, the updater, and the **GitHub Repository** menu item still point to the upstream [openhoangnc/mac-stats](https://github.com/openhoangnc/mac-stats). They do not track this fork's Fan Control changes. Use the source build above to retain this integration; manually installing an upstream release can replace it.
 
-## 🛠️ CLI Flags & Manual Build
-The compiled binary natively supports the following command-line flags for silent management:
-- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`: Silently unregisters `SMAppService` launch items, removes user LaunchAgent plists, flushes user defaults, and immediately exits.
+## Uninstall
 
-If you prefer to compile it yourself from source:
+From this checkout, run either:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/openhoangnc/mac-stats.git
-   cd mac-stats
-   ```
+```sh
+./uninstall.sh
+# or
+./install.sh --uninstall
+```
 
-2. **Build & install in one step (recommended).** When run from a local
-   checkout, `install.sh` detects the source and builds from it instead of
-   downloading a release—compiling a universal (Apple Silicon + Intel) binary
-   via `build.sh`, installing it to `/Applications`, and launching it:
-   ```bash
-   ./install.sh
-   ```
+These scripts target `/Applications/MacStats.app`, stop the current user's app, unregister login startup, remove an installed MacStats fan helper with administrator authentication, delete the app, and clear that user's preferences. If helper recovery fails, removal stops and its recovery files are retained. For a build kept outside `/Applications`, remove the helper in the dashboard, disable **Launch at Login**, quit, and delete that app bundle.
 
-   Or just build the `.app` bundle in place without installing:
-   ```bash
-   ./build.sh
-   open MacStats.app
-   ```
+## Tests and command-line options
 
-> **Note:** The one-line command in [Quick Start](#-one-line-download--install) downloads the latest prebuilt release, whereas `./install.sh` run from a cloned repo always builds and installs your local source.
+```sh
+bash test.sh
+```
 
----
+This runs 27 behavioral tests with simulated hardware, plus shell syntax and plist checks. Tests cover validation, curve interpolation, RPM limits, the 90°C override, ownership, watchdog/disconnect recovery, sensor and firmware errors, and the recovery journal. They do not write to real fans. The integrated app has also passed a universal build, signature verification, UI checks, and read-only sensor checks on M4; these do not establish live fan-control coverage.
 
-## 🤖 Continuous Integration & Versioning
+| Command or flag | Behavior |
+| --- | --- |
+| `open MacStats.app --args --fan-control` | Open Fan Control at app launch on a supported Mac; if MacStats is already running, open it from the menu |
+| `MacStats.app/Contents/Resources/MacStatsFanHelper --probe` | Print a read-only JSON snapshot of temperatures and fans |
+| `--cleanup-login-item`, `--uninstall-login-item`, `--uninstall` on the app binary | Unregister login startup and exit; these flags do not remove the app or fan helper |
 
-The project is fully automated via `.github/workflows/release.yml`.
+## Releases
 
-- **Automatic Version Bumping**: Pushing to the main branch (or triggering manually) automatically bumps the version number (e.g., `v1.0.0` → `v1.0.1`).
-- **Automated Releases**: The workflow compiles the native macOS app bundle, compresses it into `MacStats.zip`, and automatically attaches it to a new GitHub Release.
+[`.github/workflows/release.yml`](.github/workflows/release.yml) builds and publishes `MacStats.zip` on a `v*` tag push, manual dispatch, or a `main` push containing `[deploy-prod]`. A normal push does not publish a release; Markdown-only pushes are excluded. The workflow stamps the version, builds the universal app and helper, and attaches the archive to a GitHub Release.
 
----
+## Credits and license
 
-## 🧑‍💻 For Developers: Unique Techniques to Learn
-
-This project employs several uncommon and highly optimized techniques for macOS development that you might find interesting:
-
-1. **Zero-Xcode App Bundling**: This app is built entirely without an Xcode project file. Instead, it uses a custom bash script (`build.sh`) that invokes the `swiftc` compiler directly with aggressive size optimizations (`-Osize`, `-wmo`, `-dead_strip`). It then manually constructs the `.app` bundle structure, proving that you can build native macOS UI apps with just a terminal and text editor.
-2. **Direct Low-Level C APIs**: To achieve near-zero CPU overhead, the app bypasses high-level `Foundation` wrappers. It directly calls Mach kernel APIs (`host_processor_info`, `host_statistics64`) and BSD socket APIs (`getifaddrs`) from Swift using raw memory pointers.
-3. **Zero-Allocation String Parsing**: Inside the network polling loop, instead of allocating a Swift `String` to check if an interface is Ethernet/Wi-Fi (e.g., `name.hasPrefix("en")`), the engine compares raw C-string bytes directly (`namePtr.pointee == 0x65 && namePtr.advanced(by: 1).pointee == 0x6e`). This completely eliminates memory allocation in the high-frequency polling loop.
-4. **Dynamic SMC Discovery via IOKit**: Instead of hardcoding temperature sensor keys or using undocumented private frameworks, the app uses IOKit to dynamically probe the System Management Controller (SMC) on startup. It checks a vast array of known Apple Silicon and Intel keys, automatically discovering which ones are active on the host machine.
-5. **Active Memory Pressure Relief**: Background apps that run indefinitely often suffer from memory fragmentation. This app actively mitigates this by manually calling low-level memory management functions (like `malloc_zone_pressure_relief`) to aggressively keep the background memory footprint tight.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
+This fork builds on [MacStats](https://github.com/openhoangnc/mac-stats) and integrates the local MacFan implementation. The fan SMC implementation includes work based on Stats under MIT; its attribution and license are preserved in [FanControl/Resources/Stats-LICENSE.txt](FanControl/Resources/Stats-LICENSE.txt) and bundled with the app.

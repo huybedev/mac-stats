@@ -1,124 +1,114 @@
-# MacStats 📊
+# MacStats
 
-> 一款使用 Swift 开发的 macOS 菜单栏状态监控工具。极其轻量、原生体验。CPU 使用率、内存占用、网速和 CPU 温度，扫一眼即可轻松掌握。
+[Tiếng Việt](README.vi.md) | [English](README.md) | **简体中文**
 
-🌐 [English](README.md) | [Tiếng Việt](README.vi.md) | [简体中文](README.zh.md) | [日本語](README.ja.md)
+使用原生 Swift 编写的 macOS 菜单栏系统监控应用，将 MacFan 集成为同一应用中的 **Fan Control（风扇控制）** 功能。
 
-![macOS 11.0+](https://img.shields.io/badge/macOS-11.0%2B-blue?logo=apple)
-![Swift](https://img.shields.io/badge/Swift-5.0-orange?logo=swift)
-![License](https://img.shields.io/badge/License-MIT-green)
+![MacStats 菜单栏监控界面](screenshot.png)
 
-![MacStats Screenshot](screenshot.png)
+## 功能
 
+- 在菜单栏显示 CPU 使用率、内存占用、上传/下载速度和 CPU 温度。
+- 查看 CPU 平均温度、最高 CPU 传感器温度，以及设备支持的电池温度。
+- 查看 CPU 和内存占用最高的应用，并将辅助进程归入所属应用。
+- 自定义显示列、摄氏/华氏单位、平均/最高温度，以及 1/2/5 秒的监控刷新间隔。
+- 登录时启动、快速打开活动监视器，以及管理发布版本更新。
+- **风扇控制：** CPU/GPU 温度、当前及目标 RPM、固定 RPM、可编辑 CPU 温度曲线、安静/均衡/凉爽预设，以及最多三分钟的 CPU 温度历史。
+- 风扇控制面板支持越南语、英语和简体中文，主监控菜单使用英语。
 
-## 风扇控制
+## 系统要求
 
-在 MacStats 菜单中选择 **Fan Control…**，可使用集成的 MacFan 面板：CPU/GPU 温度、风扇转速、固定 RPM、自定义 CPU 温度曲线、预设和温度历史，支持越南语、英语和简体中文。风扇功能需要 **macOS 14+ 和 Apple M4**；原有监控功能仍支持 macOS 11+ 的 Intel 和 Apple Silicon。传感器映射此前仅在 Mac mini M4 上验证过。
+| 组件 | 要求 |
+| --- | --- |
+| 系统监控 | macOS 11+，Intel 或 Apple Silicon；传感器可用性取决于机型 |
+| 风扇控制 | macOS 14+，Apple M4 系列；继承的传感器映射已在 Mac mini M4 上验证，其他机型尚未验证 |
+| 更改风扇设置 | 安装随应用提供的特权辅助程序，并通过 macOS 管理员认证 |
+| 构建 | 安装 Xcode Command Line Tools 和 macOS 14+ SDK 的 Mac；生成图标需要 Python 3 |
 
-通过面板安装辅助程序并进行管理员认证后即可控制；更新应用后需更新辅助程序。关闭窗口仍继续运行，退出应用会请求将控制权交还 macOS。可在面板中移除辅助程序，卸载脚本也会处理它。请先将独立 MacFan 切换为自动模式。CPU/GPU 达到 90°C 时请求最高转速；断开连接、心跳超时、传感器或写入故障、睡眠会触发恢复尝试，失败时保留日志重试。自动测试使用模拟硬件，尚未验证真实睡眠/唤醒和过热场景。运行 `bash test.sh` 可执行不写入真实风扇的测试。Stats 的 MIT 许可证包含在 `FanControl/Resources/Stats-LICENSE.txt` 中。
+应用和辅助程序均构建为 `arm64` + `x86_64` 通用二进制文件。不支持的系统会禁用风扇控制，系统监控仍可使用。项目使用系统框架，无需 Xcode 工程或第三方 Swift 包。
 
+## 构建与运行
 
----
+请从本仓库构建，以使用集成的风扇控制功能：
 
-## ⚡ 快速开始
-
-### 📦 一键下载与安装
-在终端 (Terminal) 中运行以下命令，即可全自动完成下载、解压并安装 **MacStats** 到 `/Applications` 目录：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.sh | bash
+```sh
+git clone https://github.com/huybedev/mac-stats.git
+cd mac-stats
+./build.sh
+open MacStats.app
 ```
 
----
+如需一步完成构建、替换 `/Applications/MacStats.app` 并启动，请在源码目录运行：
 
-### 🗑️ 一键干净卸载
-想要完全卸载 MacStats，清理开机启动项以及用户偏好设置，并删除应用程序文件，请运行：
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstall.sh | bash
+```sh
+./install.sh
 ```
 
----
+这需要 `/Applications` 的写入权限。从源码目录运行的 `install.sh` 会构建本地源码，不会下载发布版本。应用常驻菜单栏，不显示 Dock 图标。左键或右键点击指标即可打开菜单。
 
-## ✨ 核心特性
+## 使用风扇控制
 
-- 🚀 **极度轻量且飞快**：原生 Swift 开发，内存和 CPU 占用几乎可以忽略不计。没有臃肿的 Xcode 工程，零第三方依赖。
-- 📊 **三列式菜单栏展示**：
-  - **左列 (网络)**：实时显示 上传（上）和 下载（下）网速。单位自动缩放（`B`, `K`, `M`, `G`），并会根据当前网速动态变色。
-  - **中列 (CPU/内存)**：显示 CPU 使用率（上）和 内存占用量 G（下）。当负载升高时颜色会自动从绿变红。
-  - **右列 (温度)**：显示 CPU 温度（上，可选平均温度或最热传感器）和 温度单位（下）。颜色同样会根据温度高低自动变化。
-- 🔝 **一眼看清资源占用大户**：每次打开菜单，都会实时列出占用 **CPU** 和 **内存** 最多的应用。辅助进程（例如浏览器的众多渲染进程）会自动归并到其父应用下，后台系统守护进程则被过滤掉——让你只看到真正需要关注的应用。
-- 🌡️ **温度一目了然**：菜单中还会列出 **CPU 平均温度**、**CPU 最热传感器**温度（降频所依据的读数），以及 MacBook 的**电池**温度。
-- ⚙️ **快捷设置菜单**：左键或右键点击菜单栏图标即可唤出：
-  - **Open Activity Monitor (打开活动监视器)**：一键跳转到 macOS 活动监视器，查看完整详细的资源占用情况。
-  - **Show Network Speeds (显示网速)**：切换是否显示网速列。
-  - **Show CPU Temperature (显示CPU温度)**：切换是否显示CPU温度列。
-  - **Launch at Login (开机启动)**：一键开启/关闭开机自启。macOS 13+ 使用原生的 `SMAppService`，老系统则自动降级使用 LaunchAgents plist。
-  - **Install Updates Automatically (自动安装更新)**：默认开启。关闭后，新版本只会显示在菜单中，由你手动安装。
-  - **Update Interval (刷新频率)**：支持自定义刷新时间（1秒、2秒 或 5秒）。
-  - **Temperature Unit (温度单位)**：切换摄氏度 (`°C`) 和华氏度 (`°F`)。
-  - **Menu Bar Temperature (菜单栏温度)**：选择在菜单栏显示 CPU 平均温度或最热传感器温度。
-  - **GitHub Repository**：直达本项目源码库。
-  - **Check for Updates… (检查更新)**：立即在 GitHub 上检查是否有新版本。
-  - **Quit MacStats (退出)**：完全退出程序。
-- 🧠 **动态 SMC 温度传感器扫描**：启动时自动扫描适配的 Intel 和 Apple Silicon (M1/M2/M3/M4/M5) 温度传感器（智能遍历能效核、性能核及各类核心温度键值），精准计算出实时平均温度和最热传感器温度。在 Apple Silicon 上会区分每个传感器的实时键值与峰值键值，并剔除仅为固定偏移量、并非真实测量值的键值。
-- ⚡ **深度内存与性能优化**：
-  - 作为后台辅助程序 (`LSUIElement`) 运行，不会在 Dock 栏出现，也不会在 Command-Tab 切换时打扰你。
-  - 主动进行内存整理：在应用启动时及运行期间（每 30 秒）调用 `malloc_zone_pressure_relief`，彻底告别内存碎片和泄露。
-  - 设置了合理的定时器容差 (Tolerance)，允许 macOS 将定时任务与其他系统事件合并执行，显著降低电池消耗。
-- 🔄 **自动更新**：每天向 GitHub 查询一次最新版本。发现新版本时，自动下载 `MacStats.zip`，校验（SHA-256 摘要、Bundle ID、版本号、代码签名）后原地替换并重启——菜单打开期间绝不重启。自行编译的版本不会自动更新；可通过 **Check for Updates…** 手动切换到正式版。
-- 🤖 **全自动的发布流水线 (CI/CD)**：借助 GitHub Actions，每次更新都会自动构建 `.app`、递增语义化版本号，并发布最新的 GitHub Release。
+1. 在 MacStats 菜单选择 **Fan Control…**。无需安装辅助程序即可查看温度和 RPM。
+2. 点击 **安装辅助程序**，完成 macOS 管理员认证后启用控制。
+3. 选择 **macOS 自动**、**按 CPU 温度** 或 **固定转速**，调整曲线或目标后点击 **应用**。配置在成功应用后保存。
+4. 点击 **交还 macOS** 释放控制权。关闭窗口后 MacStats 和风扇控制仍继续运行，退出应用时会请求交还 macOS。
 
----
+在面板的 **语言** 中选择越南语、英语或简体中文。**Launch at Login** 位于 MacStats 主菜单中。**启动时启用温度曲线** 默认关闭，请在应用合适的曲线后再开启；未开启时，只有应用设置才会开始控制。设备睡眠后需要重新点击“应用”以恢复控制。
 
-## 🛠️ CLI 参数与手动编译
-内置支持以下命令行参数，方便静默管理：
-- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`：静默注销 `SMAppService`，删除 LaunchAgents plist 文件及用户配置，然后立刻退出。
+温度曲线使用摄氏度及最高 CPU 传感器温度。百分比按每个风扇自身的硬件范围换算：0% 为最低 RPM，100% 为最高 RPM，节点之间线性插值。散热需求增加时立即提高目标，降低时每两秒最多下降 150 RPM。固定 RPM 同样受每个风扇的硬件范围限制。面板每两秒刷新，独立于主监控刷新间隔。
 
-如果你更喜欢克隆源码自己编译：
+### 辅助程序与恢复
 
-1. 克隆代码库：
-   ```bash
-   git clone https://github.com/openhoangnc/mac-stats.git
-   cd mac-stats
-   ```
+辅助程序使用独立 XPC 服务，仅提供状态读取、受限配置和释放控制操作。应用与辅助程序相互验证代码签名。替换或更新 MacStats 后，请选择 **更新辅助程序** 以同步受信任签名。它与独立 MacFan 的辅助程序分离；切换前请先将 MacFan 或其他风扇工具设为 Auto。
 
-2. **一步完成构建与安装（推荐）。** 从本地克隆的源码运行时，`install.sh` 会检测到源码并直接从源码构建，而不是下载发布版—通过 `build.sh` 编译通用（Apple Silicon + Intel）二进制文件，安装到 `/Applications` 并启动：
-   ```bash
-   ./install.sh
-   ```
+在两种自定义模式下，CPU 或 GPU 达到 90°C 都会请求最高转速。退出、连接中断、心跳超过 12 秒未收到、传感器/读写故障以及睡眠会触发交还 macOS 的尝试。恢复日志支持在恢复失败或辅助程序重启后重试，但不保证处理固件故障或断电。本次集成尚未验证真实风扇写入、睡眠/唤醒及过热场景。
 
-   或者只在当前目录构建 `.app` 应用包而不安装：
-   ```bash
-   ./build.sh
-   open MacStats.app
-   ```
+辅助程序安装文件：
 
-> **注意：** 快速开始中的一行命令会下载最新的预构建发布版，而在克隆的仓库中运行 `./install.sh` 则始终构建并安装你本地的源码。
+```text
+/Library/PrivilegedHelperTools/com.openhoangnc.macstats.FanHelper
+/Library/LaunchDaemons/com.openhoangnc.macstats.FanHelper.plist
+/Library/Application Support/MacStats/FanControl/
+```
 
----
+选择 **移除辅助程序…** 可仅移除控制功能并保留监控。如果尚未确认控制权交还 macOS，卸载程序会保留辅助程序及日志以继续恢复。本地构建使用 ad hoc 签名，未经 Apple 公证。
 
-## 🤖 CI/CD 与自动化版本控制
+## 更新
 
-本项目通过 `.github/workflows/release.yml` 实现了完善的持续集成与发布：
+发布版本每天检查更新。**Install Updates Automatically** 控制自动安装，**Check for Updates…** 用于手动检查。本地构建版本号为 `0.0.0`，不会自动检查更新。
 
-- **自动打版升级**：当推送代码或手动触发时，版本号会自动递增（例如：`v1.0.0` → `v1.0.1`）。
-- **自动化构建发布**：全自动编译原生 macOS 应用程序包并压缩为 `MacStats.zip`，随后直接发布到 GitHub Releases 供用户下载。
+`install.sh` 的下载来源、应用更新器及 **GitHub Repository** 菜单项目前仍指向上游 [openhoangnc/mac-stats](https://github.com/openhoangnc/mac-stats)，不会跟踪本分支的风扇控制更改。请使用上面的源码构建方式保留集成功能；手动安装上游发布版本可能将其替换。
 
----
+## 卸载
 
-## 🧑‍💻 开发者专区：值得学习的独特技术
+在源码目录运行以下任一命令：
 
-本项目采用了一些在 macOS 开发中不常见且高度优化的技术，您可能会觉得有趣：
+```sh
+./uninstall.sh
+# 或
+./install.sh --uninstall
+```
 
-1. **零 Xcode 应用程序打包 (Zero-Xcode)**：此应用程序的构建完全不需要 Xcode 项目文件。相反，它使用自定义的 bash 脚本 (`build.sh`) 直接调用 `swiftc` 编译器，并进行激进的体积优化 (`-Osize`、`-wmo`、`-dead_strip`)。然后，它手动构建 `.app` 应用程序包结构，这证明了您只需使用终端和文本编辑器即可构建原生的 macOS UI 应用程序。
-2. **直接调用底层 C API**：为了实现接近零的 CPU 开销，该应用程序绕过了高级的 `Foundation` 包装器。它直接在 Swift 中使用原始内存指针调用 Mach 内核 API (`host_processor_info`、`host_statistics64`) 和 BSD 套接字 API (`getifaddrs`)。
-3. **零分配字符串解析 (Zero-Allocation)**：在网络轮询循环中，引擎没有分配 Swift `String` 来检查接口是否为以太网/Wi-Fi（例如 `name.hasPrefix("en")`），而是直接比较原始 C 字符串字节 (`namePtr.pointee == 0x65 && namePtr.advanced(by: 1).pointee == 0x6e`)。这完全消除了高频轮询循环中的内存分配。
-4. **通过 IOKit 动态发现 SMC**：该应用程序没有硬编码温度传感器键值或使用未记录的私有框架，而是使用 IOKit 在启动时动态探测系统管理控制器 (SMC)。它检查大量已知的 Apple Silicon 和 Intel 键值，自动发现主机上哪些键值处于活动状态。
-5. **主动缓解内存压力**：无限期运行的后台应用程序通常会遭遇内存碎片问题。此应用程序通过手动调用底层内存管理函数（如 `malloc_zone_pressure_relief`）来主动缓解此问题，从而积极保持极小的后台内存占用。
+脚本针对 `/Applications/MacStats.app`：停止当前用户的应用、注销登录启动项、经管理员认证移除已安装的 MacStats 辅助程序、删除应用及该用户的偏好设置。如果风扇恢复失败，卸载会停止并保留恢复文件。对于放在 `/Applications` 之外的构建，请先在面板中移除辅助程序、关闭 **Launch at Login**、退出应用，再删除对应的应用包。
 
----
+## 测试与命令行
 
-## 📄 许可协议
+```sh
+bash test.sh
+```
 
-本项目基于 MIT License 协议开源。
+该命令运行 27 项模拟硬件行为测试，以及 shell 语法和 plist 检查。测试覆盖配置校验、曲线插值、RPM 范围、90°C 覆盖策略、会话所有权、看门狗/断线恢复、传感器及固件错误、恢复日志，不会写入真实风扇。集成应用也已通过通用构建、签名验证、界面检查和 M4 实机只读传感器检查；这些结果不代表已验证真实辅助程序风扇控制。
+
+| 命令或参数 | 行为 |
+| --- | --- |
+| `open MacStats.app --args --fan-control` | 在支持的 Mac 上启动时打开风扇控制；应用已运行时请从菜单打开 |
+| `MacStats.app/Contents/Resources/MacStatsFanHelper --probe` | 输出温度和风扇状态的只读 JSON 快照 |
+| 应用二进制参数 `--cleanup-login-item`、`--uninstall-login-item`、`--uninstall` | 注销登录启动项并退出，不会删除应用或辅助程序 |
+
+## 发布
+
+[`.github/workflows/release.yml`](.github/workflows/release.yml) 在推送 `v*` 标签、手动运行，或向 `main` 推送包含 `[deploy-prod]` 提交消息时构建并发布 `MacStats.zip`。普通推送不会发布，仅修改 Markdown 的推送被排除。工作流写入版本号、构建通用应用和辅助程序，并将压缩包附加到 GitHub Release。
+
+## 来源与许可证
+
+本分支基于 [MacStats](https://github.com/openhoangnc/mac-stats)，并集成本地 MacFan 实现。风扇 SMC 实现包含基于 Stats 的 MIT 许可代码；作者署名及许可证保存在 [FanControl/Resources/Stats-LICENSE.txt](FanControl/Resources/Stats-LICENSE.txt)，并随应用打包。

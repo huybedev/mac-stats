@@ -1,136 +1,114 @@
-# MacStats 📊
+# MacStats
 
-> Ứng dụng theo dõi trạng thái hệ thống gọn nhẹ trên thanh Menu macOS, được viết hoàn toàn bằng Swift. Giúp bạn xem nhanh mức sử dụng CPU, dung lượng RAM, tốc độ mạng và nhiệt độ CPU theo thời gian thực.
+**Tiếng Việt** | [English](README.md) | [简体中文](README.zh.md)
 
-🌐 [English](README.md) | [Tiếng Việt](README.vi.md) | [简体中文](README.zh.md) | [日本語](README.ja.md)
+Ứng dụng Swift theo dõi hệ thống trên thanh menu macOS, tích hợp MacFan thành tính năng **Fan Control** ngay trong cùng ứng dụng.
 
-![macOS 11.0+](https://img.shields.io/badge/macOS-11.0%2B-blue?logo=apple)
-![Swift](https://img.shields.io/badge/Swift-5.0-orange?logo=swift)
-![License](https://img.shields.io/badge/License-MIT-green)
+![Giao diện theo dõi trên thanh menu MacStats](screenshot.png)
 
-![MacStats Screenshot](screenshot.png)
+## Tính năng
 
+- Hiển thị mức sử dụng CPU, RAM, tốc độ tải lên/tải xuống và nhiệt độ CPU trên thanh menu.
+- Xem nhiệt độ CPU trung bình, cảm biến CPU nóng nhất và nhiệt độ pin khi máy hỗ trợ.
+- Xem các ứng dụng dùng nhiều CPU/RAM nhất; tiến trình phụ được gộp theo ứng dụng cha.
+- Tùy chỉnh các cột hiển thị, °C/°F, nhiệt độ trung bình/nóng nhất và chu kỳ thống kê 1/2/5 giây.
+- Khởi động khi đăng nhập, mở nhanh Activity Monitor và quản lý cập nhật bản phát hành.
+- **Fan Control:** theo dõi nhiệt độ CPU/GPU, RPM hiện tại và mục tiêu, đặt RPM cố định, chỉnh đường nhiệt CPU, chọn Êm/Cân bằng/Mát và xem lịch sử nhiệt độ tối đa ba phút.
+- Cửa sổ Fan Control hỗ trợ Tiếng Việt, English và 简体中文. Menu thống kê chính dùng tiếng Anh.
 
-## Điều khiển quạt
+## Yêu cầu
 
-Chọn **Fan Control…** trong menu MacStats để mở tính năng tích hợp từ MacFan: nhiệt độ CPU/GPU, RPM từng quạt, RPM cố định, đường nhiệt CPU có thể chỉnh, ba cấu hình Êm/Cân bằng/Mát và lịch sử nhiệt độ tối đa 3 phút. Giao diện có Tiếng Việt, English và 简体中文. Đóng cửa sổ vẫn giữ điều khiển trong MacStats; **Launch at Login** dùng chung thiết lập của MacStats, còn **Tự bật đường nhiệt khi mở** nằm trong cửa sổ điều khiển quạt.
+| Thành phần | Yêu cầu |
+| --- | --- |
+| Theo dõi hệ thống | macOS 11+, Intel hoặc Apple Silicon; cảm biến phụ thuộc mẫu máy |
+| Fan Control | macOS 14+, dòng Apple M4; danh sách cảm biến kế thừa đã được kiểm trên Mac mini M4, các mẫu khác chưa xác minh |
+| Thay đổi tốc độ quạt | Cài bộ trợ giúp đi kèm và xác thực quyền quản trị qua macOS |
+| Build | macOS có Xcode Command Line Tools và SDK macOS 14+; Python 3 để tạo biểu tượng |
 
-Tính năng này cần **macOS 14+ và Apple M4**; phần thống kê vẫn hỗ trợ macOS 11+ trên Intel và Apple Silicon. Danh sách cảm biến kế thừa đã được MacFan kiểm trên Mac mini M4; chưa xác minh các mẫu máy khác. Chọn **Cài bộ trợ giúp** và xác thực với macOS để điều khiển; không cài vẫn theo dõi được. Sau khi thay hoặc cập nhật app, chọn **Cập nhật bộ trợ giúp** để đồng bộ chữ ký. Helper dùng riêng cho MacStats; hãy trả MacFan độc lập về Auto trước khi chuyển sang.
+Ứng dụng và helper được build universal `arm64` + `x86_64`. Fan Control bị vô hiệu hóa trên máy không hỗ trợ; tính năng thống kê vẫn hoạt động. Dự án dùng framework hệ thống, không cần project Xcode hay gói Swift bên ngoài.
 
-RPM được giới hạn theo phần cứng. CPU/GPU từ 90°C yêu cầu tốc độ tối đa. Khi thoát, máy ngủ, mất kết nối/heartbeat, lỗi cảm biến hoặc ghi, helper yêu cầu trả quyền về macOS và giữ nhật ký để thử lại nếu phục hồi lỗi. Các trường hợp này có kiểm thử phần cứng giả lập; chưa xác minh ngủ/thức và quá nhiệt thực tế. Điều khiển chỉ tự bật khi bạn chọn tùy chọn khởi động.
+## Build và chạy
 
-Gỡ bằng **Gỡ bộ trợ giúp…**, hoặc dùng `uninstall.sh` / `install.sh --uninstall` (yêu cầu quyền quản trị nếu đã cài helper). Nếu chưa phục hồi được, trình gỡ giữ helper để thử lại. Helper dùng tên `com.openhoangnc.macstats.FanHelper`; nhật ký nằm tại `/Library/Application Support/MacStats/FanControl`.
+Build từ repository này để dùng bản tích hợp Fan Control:
 
 ```sh
-bash test.sh                         # kiểm thử giả lập, không ghi quạt thật
-open MacStats.app --args --fan-control
-MacStats.app/Contents/Resources/MacStatsFanHelper --probe  # chỉ đọc phần cứng
+git clone https://github.com/huybedev/mac-stats.git
+cd mac-stats
+./build.sh
+open MacStats.app
 ```
 
-Mã SMC tham khảo Stats theo giấy phép MIT, kèm tại `FanControl/Resources/Stats-LICENSE.txt` và trong app.
+Để build, thay thế `/Applications/MacStats.app` và mở ứng dụng trong một bước, chạy từ thư mục source:
 
-
----
-
-## ⚡ Bắt đầu nhanh
-
-### 📦 Cài đặt chỉ với 1 dòng lệnh
-Copy và chạy dòng lệnh dưới đây trong Terminal để tải, giải nén và cài đặt **MacStats** thẳng vào thư mục `/Applications`:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/install.sh | bash
+```sh
+./install.sh
 ```
 
----
+Bạn cần quyền ghi vào `/Applications`. Khi chạy trong source, `install.sh` build mã local, không tải bản phát hành. Ứng dụng chạy trên thanh menu, không có biểu tượng Dock. Bấm chuột trái hoặc phải vào các chỉ số để mở menu.
 
-### 🗑️ Gỡ cài đặt hoàn toàn
-Để tắt MacStats, xoá cấu hình khởi động cùng hệ thống, xoá thiết lập của người dùng và xoá ứng dụng khỏi `/Applications`:
+## Sử dụng Fan Control
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/openhoangnc/mac-stats/main/uninstall.sh | bash
+1. Chọn **Fan Control…** trong menu MacStats. Bạn có thể theo dõi nhiệt độ và RPM khi chưa cài helper.
+2. Chọn **Cài bộ trợ giúp**, rồi xác thực ở hộp thoại quản trị macOS để bật điều khiển.
+3. Chọn **macOS tự quản lý**, **Theo nhiệt độ CPU** hoặc **RPM cố định**. Chỉnh đường nhiệt hoặc mục tiêu, rồi bấm **Áp dụng**. Cấu hình được lưu sau khi áp dụng thành công.
+4. Bấm **Trả về macOS** để nhả điều khiển. Đóng cửa sổ vẫn giữ MacStats và điều khiển quạt hoạt động; thoát ứng dụng sẽ yêu cầu trả quyền về macOS.
+
+Chọn Tiếng Việt, English hoặc 简体中文 tại **Ngôn ngữ** trong cửa sổ. **Launch at Login** nằm trong menu MacStats chính. **Tự bật đường nhiệt khi mở** mặc định tắt; chỉ bật sau khi đã áp dụng đường nhiệt phù hợp. Nếu không bật, điều khiển chỉ bắt đầu khi bạn áp dụng cấu hình. Sau khi máy ngủ, bấm Áp dụng lại để tiếp tục điều khiển.
+
+Đường nhiệt dùng độ C và cảm biến CPU nóng nhất. Phần trăm được quy đổi theo dải phần cứng của từng quạt: 0% là RPM tối thiểu, 100% là tối đa; nội suy tuyến tính giữa các mốc. Nhu cầu làm mát tăng được đáp ứng ngay, giảm tối đa 150 RPM mỗi chu kỳ hai giây. RPM cố định cũng bị giới hạn theo từng quạt. Cửa sổ cập nhật mỗi hai giây, độc lập với chu kỳ thống kê.
+
+### Bộ trợ giúp và phục hồi
+
+Helper dùng dịch vụ XPC riêng, chỉ cung cấp đọc trạng thái, áp dụng cấu hình có giới hạn và nhả quyền. App và helper xác minh chữ ký của nhau. Sau khi thay hoặc cập nhật MacStats, chọn **Cập nhật bộ trợ giúp** để đồng bộ chữ ký tin cậy. Helper này tách biệt với MacFan độc lập; hãy đưa MacFan hoặc phần mềm chỉnh quạt khác về Auto trước khi chuyển sang.
+
+CPU hoặc GPU từ 90°C yêu cầu tốc độ tối đa ở cả hai chế độ tùy chỉnh. Khi thoát, mất kết nối, mất heartbeat quá 12 giây, lỗi cảm biến/đọc/ghi hoặc máy ngủ, helper thử trả quyền về macOS. Nhật ký phục hồi cho phép thử lại sau lỗi hoặc khi helper khởi động lại. Cơ chế này không bảo đảm xử lý được lỗi firmware hoặc mất điện. Bản tích hợp chưa được kiểm ghi quạt thật, ngủ/thức và quá nhiệt thực tế.
+
+Các tệp helper được cài:
+
+```text
+/Library/PrivilegedHelperTools/com.openhoangnc.macstats.FanHelper
+/Library/LaunchDaemons/com.openhoangnc.macstats.FanHelper.plist
+/Library/Application Support/MacStats/FanControl/
 ```
 
----
+Chọn **Gỡ bộ trợ giúp…** để gỡ riêng phần điều khiển, vẫn giữ theo dõi. Nếu chưa xác nhận quạt trở về macOS, trình gỡ giữ helper và nhật ký để thử phục hồi tiếp. Bản build local ký ad hoc, chưa được Apple notarize.
 
-## ✨ Các tính năng nổi bật
+## Cập nhật
 
-- 🚀 **Siêu nhẹ & Siêu nhanh**: Ứng dụng native Swift, ngốn cực kỳ ít CPU và RAM. Code gọn gàng, không cần project Xcode hay các thư viện ngoài cồng kềnh.
-- 📊 **Hiển thị 3 cột thông tin trực quan**:
-  - **Cột Trái (Mạng)**: Tốc độ Upload (dòng trên) và Download (dòng dưới). Đơn vị tự động thay đổi (`B`, `K`, `M`, `G`) và màu sắc cảnh báo theo băng thông.
-  - **Cột Giữa (CPU & RAM)**: % CPU (dòng trên) và mức RAM đang dùng tính bằng GB (dòng dưới). Màu sắc tự động đổi (xanh/vàng/đỏ) khi hệ thống tải nặng.
-  - **Cột Phải (Nhiệt độ)**: Nhiệt độ CPU (dòng trên) — trung bình, hoặc cảm biến nóng nhất tùy bạn chọn — và đơn vị (`°C` hoặc `°F`) (dòng dưới), cũng đổi màu linh hoạt theo độ nóng.
-- 🔝 **Xem ngay ứng dụng "ngốn" tài nguyên**: Mỗi khi mở menu, app hiển thị ngay top các ứng dụng đang chiếm nhiều **CPU** và **RAM** nhất theo thời gian thực. Các tiến trình phụ (ví dụ hàng loạt renderer của trình duyệt) được gộp chung về ứng dụng cha, còn các tiến trình hệ thống chạy ngầm sẽ bị lọc bỏ — nên bạn chỉ thấy đúng những ứng dụng thực sự đáng quan tâm.
-- 🌡️ **Xem nhanh nhiệt độ**: Menu còn hiển thị nhiệt độ **CPU trung bình**, **CPU nóng nhất** (con số mà cơ chế giảm xung nhiệt dựa vào) và nhiệt độ **pin** trên MacBook.
-- ⚙️ **Menu Cài đặt nhanh**: Click chuột trái/phải vào icon trên thanh Menu để mở:
-  - **Open Activity Monitor**: Mở nhanh Activity Monitor của macOS để xem chi tiết đầy đủ.
-  - **Show Network Speeds**: Bật/tắt hiển thị cột tốc độ mạng.
-  - **Show CPU Temperature**: Bật/tắt hiển thị cột nhiệt độ CPU.
-  - **Launch at Login**: Bật/tắt tự động khởi động cùng macOS (dùng `SMAppService` cực mượt trên macOS 13+, và tự lùi về LaunchAgents plist cho các máy cũ hơn).
-  - **Install Updates Automatically**: Bật sẵn. Tắt đi thì bản mới chỉ hiện trong menu để bạn tự cài.
-  - **Update Interval**: Chọn tốc độ làm mới dữ liệu (1 giây, 2 giây hoặc 5 giây).
-  - **Temperature Unit**: Chuyển đổi giữa độ C và độ F.
-  - **Menu Bar Temperature**: Chọn hiển thị nhiệt độ CPU trung bình hay cảm biến CPU nóng nhất trên thanh Menu.
-  - **GitHub Repository**: Link nhanh về trang GitHub của project.
-  - **Check for Updates…**: Kiểm tra ngay trên GitHub xem có bản mới không.
-  - **Quit MacStats**: Thoát app.
-- 🧠 **Cảm biến nhiệt độ SMC thông minh**: Tự động dò tìm các cảm biến nhiệt SMC tương thích với cả chip Intel lẫn Apple Silicon (M1/M2/M3/M4/M5). App sẽ check nhiệt độ các nhân P-core, E-core... và tính ra nhiệt độ trung bình cùng nhiệt độ cảm biến nóng nhất theo thời gian thực. Trên Apple Silicon, app phân biệt khóa giá trị tức thời và khóa giá trị đỉnh của từng cảm biến, đồng thời loại bỏ các khóa chỉ là giá trị cộng thêm độ lệch cố định (không phải số đo thật).
-- ⚡ **Tối ưu cực hạn cho hiệu năng & bộ nhớ**:
-  - Ẩn mình hoàn toàn như một app nền (`LSUIElement`) – không hiện dưới Dock, không cản trở lúc bạn Command-Tab.
-  - Chủ động dọn dẹp bộ nhớ (gọi `malloc_zone_pressure_relief`) lúc mới bật và đều đặn mỗi 30 giây để tránh rác RAM.
-  - Tích hợp độ trễ hẹn giờ (timer tolerance khoảng 25%), giúp macOS gom nhóm các tác vụ ngầm lại với nhau để tối ưu pin.
-- 🔄 **Tự động cập nhật**: Mỗi ngày một lần, MacStats hỏi GitHub bản release mới nhất. Nếu có bản mới hơn, app tải `MacStats.zip`, kiểm tra (SHA-256, bundle ID, version, chữ ký code), thay thế tại chỗ rồi tự khởi động lại — không bao giờ trong lúc menu đang mở. Bản bạn tự build sẽ không tự cập nhật; dùng **Check for Updates…** nếu muốn chuyển sang bản release.
-- 🤖 **Tích hợp sẵn luồng CI/CD**: Workflow GitHub Actions tự động build app, tăng version tự động và tạo GitHub Release mỗi lần cập nhật code.
+Bản phát hành kiểm tra cập nhật mỗi ngày. **Install Updates Automatically** quyết định tự cài; **Check for Updates…** kiểm tra thủ công. Bản build local có phiên bản `0.0.0` và không tự kiểm tra cập nhật.
 
----
+Nguồn tải trong `install.sh`, bộ cập nhật và mục **GitHub Repository** hiện vẫn trỏ về dự án gốc [openhoangnc/mac-stats](https://github.com/openhoangnc/mac-stats), không theo dõi thay đổi Fan Control của fork này. Dùng cách build từ source ở trên để giữ tính năng tích hợp; cài thủ công bản phát hành từ upstream có thể thay thế nó.
 
-## 🛠️ Build thủ công & Tham số dòng lệnh
-File thực thi (binary) của app hỗ trợ sẵn các cờ sau:
-- `--cleanup-login-item` / `--uninstall-login-item` / `--uninstall`: Dọn dẹp sạch sẽ các đăng ký khởi động ngầm (`SMAppService` và LaunchAgents plist), xoá cấu hình và tự thoát.
+## Gỡ cài đặt
 
-Nếu bạn thích tự tay clone và build code:
+Chạy một trong hai lệnh từ source:
 
-1. Clone repo về máy:
-   ```bash
-   git clone https://github.com/openhoangnc/mac-stats.git
-   cd mac-stats
-   ```
+```sh
+./uninstall.sh
+# hoặc
+./install.sh --uninstall
+```
 
-2. **Build & cài đặt chỉ trong một bước (khuyến nghị).** Khi chạy từ mã nguồn đã clone, `install.sh` sẽ tự phát hiện source và build từ đó thay vì tải bản release—biên dịch binary universal (Apple Silicon + Intel) qua `build.sh`, cài vào `/Applications` rồi khởi chạy:
-   ```bash
-   ./install.sh
-   ```
+Các script nhắm tới `/Applications/MacStats.app`: dừng app của người dùng hiện tại, hủy khởi động khi đăng nhập, gỡ helper MacStats đã cài sau xác thực quản trị, xóa ứng dụng và thiết lập của người dùng đó. Nếu phục hồi quạt lỗi, quá trình gỡ dừng và giữ các tệp phục hồi. Với app đặt ngoài `/Applications`, hãy gỡ helper trong cửa sổ, tắt **Launch at Login**, thoát rồi xóa bundle ứng dụng đó.
 
-   Hoặc chỉ build gói `.app` tại chỗ mà không cài đặt:
-   ```bash
-   ./build.sh
-   open MacStats.app
-   ```
+## Kiểm thử và dòng lệnh
 
-> **Lưu ý:** Lệnh một dòng ở phần Cài đặt nhanh sẽ tải bản build sẵn mới nhất, còn `./install.sh` chạy từ repo đã clone luôn build và cài đặt mã nguồn cục bộ của bạn.
+```sh
+bash test.sh
+```
 
----
+Lệnh chạy 27 bài kiểm thử hành vi bằng phần cứng giả lập, cùng kiểm tra cú pháp shell và plist. Các bài bao phủ validation, nội suy đường nhiệt, giới hạn RPM, ngưỡng 90°C, quyền sở hữu phiên, watchdog/mất kết nối, lỗi cảm biến/firmware và nhật ký phục hồi; không ghi quạt thật. Bản tích hợp cũng đã đạt build universal, xác minh chữ ký, kiểm tra giao diện và đọc cảm biến thật trên M4. Các kết quả này chưa xác minh điều khiển quạt thật qua helper.
 
-## 🤖 Tự động hoá Release (CI/CD)
+| Lệnh hoặc cờ | Hành vi |
+| --- | --- |
+| `open MacStats.app --args --fan-control` | Mở Fan Control khi khởi chạy trên máy hỗ trợ; nếu MacStats đang chạy, mở từ menu |
+| `MacStats.app/Contents/Resources/MacStatsFanHelper --probe` | In JSON nhiệt độ và trạng thái quạt, chỉ đọc |
+| `--cleanup-login-item`, `--uninstall-login-item`, `--uninstall` của binary app | Hủy khởi động khi đăng nhập rồi thoát; không xóa ứng dụng hoặc helper |
 
-Codebase có sẵn workflow tại `.github/workflows/release.yml`.
+## Phát hành
 
-- **Tự động tăng version**: Mỗi lần code được push lên nhánh chính (hoặc trigger bằng tay), version sẽ tự động nhảy số (`v1.0.0` → `v1.0.1`).
-- **Build & Đóng gói tự động**: Compile ra app macOS, nén thành `MacStats.zip`, đẩy lên GitHub Release kèm theo changelog.
+[`.github/workflows/release.yml`](.github/workflows/release.yml) build và phát hành `MacStats.zip` khi push tag `v*`, chạy thủ công hoặc push lên `main` có thông điệp commit chứa `[deploy-prod]`. Push thông thường không phát hành; push chỉ sửa Markdown bị loại trừ. Workflow đóng dấu phiên bản, build app/helper universal và đính kèm archive vào GitHub Release.
 
----
+## Nguồn và giấy phép
 
-## 🧑‍💻 Dành cho Nhà phát triển: Các kỹ thuật độc đáo đáng học hỏi
-
-Dự án này sử dụng một số kỹ thuật hiếm gặp và được tối ưu hóa cao cho việc phát triển macOS mà bạn có thể thấy thú vị:
-
-1. **Đóng gói ứng dụng Zero-Xcode**: Ứng dụng này được xây dựng hoàn toàn không có tệp dự án Xcode. Thay vào đó, nó sử dụng một tệp kịch bản bash tùy chỉnh (`build.sh`) gọi trực tiếp trình biên dịch `swiftc` với các tùy chọn tối ưu hóa kích thước mạnh mẽ (`-Osize`, `-wmo`, `-dead_strip`). Sau đó, nó xây dựng thủ công cấu trúc gói `.app`, chứng minh rằng bạn có thể xây dựng ứng dụng giao diện người dùng macOS gốc chỉ với terminal và trình soạn thảo văn bản.
-2. **Sử dụng API C cấp thấp trực tiếp**: Để đạt được mức tiêu thụ CPU gần bằng không, ứng dụng bỏ qua các wrapper `Foundation` bậc cao. Nó gọi trực tiếp các Mach kernel API (`host_processor_info`, `host_statistics64`) và BSD socket API (`getifaddrs`) từ Swift bằng cách sử dụng con trỏ bộ nhớ thô.
-3. **Phân tích chuỗi không cấp phát bộ nhớ (Zero-Allocation)**: Bên trong vòng lặp thăm dò mạng, thay vì cấp phát một `String` của Swift để kiểm tra xem một interface có phải là Ethernet/Wi-Fi hay không (ví dụ: `name.hasPrefix("en")`), engine so sánh trực tiếp các byte chuỗi C thô (`namePtr.pointee == 0x65 && namePtr.advanced(by: 1).pointee == 0x6e`). Điều này hoàn toàn loại bỏ việc cấp phát bộ nhớ trong vòng lặp thăm dò tần số cao.
-4. **Khám phá SMC động qua IOKit**: Thay vì mã hóa cứng (hardcode) các khóa cảm biến nhiệt độ hoặc sử dụng các private framework không được ghi chép, ứng dụng sử dụng IOKit để thăm dò động Bộ điều khiển quản lý hệ thống (SMC - System Management Controller) lúc khởi động. Nó kiểm tra một lượng lớn các khóa Apple Silicon và Intel đã biết, tự động phát hiện các khóa nào đang hoạt động trên máy chủ.
-5. **Chủ động giải phóng áp lực bộ nhớ**: Các ứng dụng nền chạy vô thời hạn thường bị phân mảnh bộ nhớ. Ứng dụng này chủ động giảm thiểu điều đó bằng cách gọi thủ công các hàm quản lý bộ nhớ cấp thấp (như `malloc_zone_pressure_relief`) để giữ cho dung lượng bộ nhớ nền luôn nhỏ gọn.
-
----
-
-## 📄 Giấy phép
-
-Project này được phân phối dưới giấy phép MIT.
+Fork này phát triển từ [MacStats](https://github.com/openhoangnc/mac-stats), tích hợp phần triển khai MacFan local. Mã SMC cho quạt có phần dựa trên Stats theo MIT; ghi nhận tác giả và giấy phép được giữ tại [FanControl/Resources/Stats-LICENSE.txt](FanControl/Resources/Stats-LICENSE.txt) và đóng gói cùng ứng dụng.
