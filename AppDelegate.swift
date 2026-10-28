@@ -7,6 +7,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     
     private let statsEngine = StatsEngine()
     private let updater = Updater()
+    private var fanFeature: FanFeature?
     private var isMenuOpen = false
     private var timer: Timer?
     private var updateInterval: TimeInterval = 2.0
@@ -27,8 +28,16 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         startTimer()
         updateStats()
 
+        if #available(macOS 14.0, *), FanPlatform.isSupported {
+            fanFeature = FanFeatureController()
+            if CommandLine.arguments.contains("--fan-control") { fanFeature?.showWindow() }
+        }
+
         // Never restart for an update while the user is looking at the menu.
-        updater.shouldDeferRelaunch = { [weak self] in self?.isMenuOpen ?? false }
+        updater.shouldDeferRelaunch = { [weak self] in
+            guard let self else { return false }
+            return self.isMenuOpen || (self.fanFeature?.shouldDeferUpdate ?? false)
+        }
         updater.start()
         
         // Purge transient startup heap back to OS after frameworks finish init
@@ -144,6 +153,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         let activityItem = NSMenuItem(title: "Open Activity Monitor", action: #selector(openActivityMonitor), keyEquivalent: "")
         activityItem.target = self
         menu.addItem(activityItem)
+        let fanItem = NSMenuItem(title: "Fan Control…", action: #selector(openFanControl), keyEquivalent: "")
+        fanItem.target = self
+        fanItem.isEnabled = fanFeature != nil
+        fanItem.toolTip = fanFeature == nil ? FanPlatform.unsupportedMessage : "CPU curve, fixed RPM, and fan monitoring"
+        menu.addItem(fanItem)
         menu.addItem(NSMenuItem.separator())
 
         // --- Settings Section ---
@@ -504,6 +518,26 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
     }
+
+    @objc private func openFanControl() {
+        fanFeature?.showWindow()
+    }
+
+    public func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard let fanFeature else { return .terminateNow }
+        var replied = false
+        let finish = {
+            guard !replied else { return }
+            replied = true
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        // Queue this so a disconnected helper cannot reply before .terminateLater.
+        DispatchQueue.main.async { fanFeature.prepareToQuit(completion: finish) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: finish)
+        return .terminateLater
+    }
+
+    public func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
 
     // MARK: - Info row menu rendering
 

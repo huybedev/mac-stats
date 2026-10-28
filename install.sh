@@ -36,6 +36,17 @@ do_uninstall() {
         rm -f "${PLIST_PATH}"
     fi
 
+    # Remove the privileged fan helper before deleting its bundled uninstaller.
+    if [ -f /Library/LaunchDaemons/com.openhoangnc.macstats.FanHelper.plist ]; then
+        echo "--> Removing fan helper (administrator authentication required)..."
+        FAN_UNINSTALLER="${APP_PATH}/Contents/Resources/uninstall-fan-helper.sh"
+        if [ ! -f "${FAN_UNINSTALLER}" ]; then
+            echo "Error: Open MacStats → Fan Control and remove the helper before uninstalling."
+            exit 1
+        fi
+        sudo /bin/bash "${FAN_UNINSTALLER}"
+    fi
+
     # 4. Remove App bundle
     if [ -d "${APP_PATH}" ]; then
         echo "--> Removing ${APP_PATH}..."

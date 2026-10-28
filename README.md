@@ -10,6 +10,26 @@
 
 ![MacStats Screenshot](screenshot.png)
 
+
+## Fan Control
+
+Open **Fan Control…** from the MacStats menu to use the integrated MacFan dashboard: live CPU/GPU temperatures, fan RPM, fixed RPM, editable CPU curves, Quiet/Balanced/Cool presets, and a three-minute temperature history. The dashboard supports Vietnamese, English, and Simplified Chinese. Launch at login remains in the main MacStats menu; **Enable CPU curve on launch** is configured in Fan Control. Closing this window keeps fan control running in MacStats.
+
+Fan Control requires **macOS 14+ and Apple M4**; the existing monitor still runs on macOS 11+ on Intel and Apple Silicon. The inherited sensor map was tested by MacFan on Mac mini M4; other models are unverified. Install the bundled helper from the dashboard and authenticate with macOS to enable control. Read-only monitoring works without it. After replacing or updating MacStats, use **Update helper** to trust the new app signature. This helper is separate from the standalone MacFan helper; return that app to Auto before switching.
+
+Targets stay within each fan's hardware limits. CPU or GPU at 90°C requests maximum speed. Disconnect, a missed heartbeat, sensor/write failure, sleep, or quitting requests a return to macOS; failed recovery is journaled and retried. These mechanisms have automated tests with simulated hardware; real sleep/wake and induced overheating have not been verified. Control never starts automatically unless you enable the launch option.
+
+Use **Remove helper…** in the dashboard to remove fan control. Both `uninstall.sh` and `install.sh --uninstall` also remove an installed MacStats fan helper, requesting administrator authentication; if recovery fails, they retain it for retries. Helper files use `com.openhoangnc.macstats.FanHelper` under `/Library/PrivilegedHelperTools` and `/Library/LaunchDaemons`, with recovery state under `/Library/Application Support/MacStats/FanControl`.
+
+```sh
+bash test.sh                         # behavioral tests with simulated hardware; no fan writes
+open MacStats.app --args --fan-control
+MacStats.app/Contents/Resources/MacStatsFanHelper --probe  # read-only hardware snapshot
+```
+
+The SMC implementation includes work based on Stats (MIT); its license is in `FanControl/Resources/Stats-LICENSE.txt` and is bundled with the app.
+
+
 ---
 
 ## ⚡ Quick Start

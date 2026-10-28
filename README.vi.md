@@ -10,6 +10,26 @@
 
 ![MacStats Screenshot](screenshot.png)
 
+
+## Điều khiển quạt
+
+Chọn **Fan Control…** trong menu MacStats để mở tính năng tích hợp từ MacFan: nhiệt độ CPU/GPU, RPM từng quạt, RPM cố định, đường nhiệt CPU có thể chỉnh, ba cấu hình Êm/Cân bằng/Mát và lịch sử nhiệt độ tối đa 3 phút. Giao diện có Tiếng Việt, English và 简体中文. Đóng cửa sổ vẫn giữ điều khiển trong MacStats; **Launch at Login** dùng chung thiết lập của MacStats, còn **Tự bật đường nhiệt khi mở** nằm trong cửa sổ điều khiển quạt.
+
+Tính năng này cần **macOS 14+ và Apple M4**; phần thống kê vẫn hỗ trợ macOS 11+ trên Intel và Apple Silicon. Danh sách cảm biến kế thừa đã được MacFan kiểm trên Mac mini M4; chưa xác minh các mẫu máy khác. Chọn **Cài bộ trợ giúp** và xác thực với macOS để điều khiển; không cài vẫn theo dõi được. Sau khi thay hoặc cập nhật app, chọn **Cập nhật bộ trợ giúp** để đồng bộ chữ ký. Helper dùng riêng cho MacStats; hãy trả MacFan độc lập về Auto trước khi chuyển sang.
+
+RPM được giới hạn theo phần cứng. CPU/GPU từ 90°C yêu cầu tốc độ tối đa. Khi thoát, máy ngủ, mất kết nối/heartbeat, lỗi cảm biến hoặc ghi, helper yêu cầu trả quyền về macOS và giữ nhật ký để thử lại nếu phục hồi lỗi. Các trường hợp này có kiểm thử phần cứng giả lập; chưa xác minh ngủ/thức và quá nhiệt thực tế. Điều khiển chỉ tự bật khi bạn chọn tùy chọn khởi động.
+
+Gỡ bằng **Gỡ bộ trợ giúp…**, hoặc dùng `uninstall.sh` / `install.sh --uninstall` (yêu cầu quyền quản trị nếu đã cài helper). Nếu chưa phục hồi được, trình gỡ giữ helper để thử lại. Helper dùng tên `com.openhoangnc.macstats.FanHelper`; nhật ký nằm tại `/Library/Application Support/MacStats/FanControl`.
+
+```sh
+bash test.sh                         # kiểm thử giả lập, không ghi quạt thật
+open MacStats.app --args --fan-control
+MacStats.app/Contents/Resources/MacStatsFanHelper --probe  # chỉ đọc phần cứng
+```
+
+Mã SMC tham khảo Stats theo giấy phép MIT, kèm tại `FanControl/Resources/Stats-LICENSE.txt` và trong app.
+
+
 ---
 
 ## ⚡ Bắt đầu nhanh

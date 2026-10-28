@@ -10,6 +10,14 @@
 
 ![MacStats Screenshot](screenshot.png)
 
+
+## 风扇控制
+
+在 MacStats 菜单中选择 **Fan Control…**，可使用集成的 MacFan 面板：CPU/GPU 温度、风扇转速、固定 RPM、自定义 CPU 温度曲线、预设和温度历史，支持越南语、英语和简体中文。风扇功能需要 **macOS 14+ 和 Apple M4**；原有监控功能仍支持 macOS 11+ 的 Intel 和 Apple Silicon。传感器映射此前仅在 Mac mini M4 上验证过。
+
+通过面板安装辅助程序并进行管理员认证后即可控制；更新应用后需更新辅助程序。关闭窗口仍继续运行，退出应用会请求将控制权交还 macOS。可在面板中移除辅助程序，卸载脚本也会处理它。请先将独立 MacFan 切换为自动模式。CPU/GPU 达到 90°C 时请求最高转速；断开连接、心跳超时、传感器或写入故障、睡眠会触发恢复尝试，失败时保留日志重试。自动测试使用模拟硬件，尚未验证真实睡眠/唤醒和过热场景。运行 `bash test.sh` 可执行不写入真实风扇的测试。Stats 的 MIT 许可证包含在 `FanControl/Resources/Stats-LICENSE.txt` 中。
+
+
 ---
 
 ## ⚡ 快速开始
