@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 protocol FanHardware: AnyObject {
     func fans() throws -> [FanReading]
@@ -56,6 +57,7 @@ final class FanController {
     }
     func disconnected(_ client: UUID) { if owner == client { release(reason: "Ứng dụng đã ngắt kết nối; đã trả về macOS.") } }
     func release(reason: String) {
+        Logger(subsystem: "com.openhoangnc.macstats", category: "fan-control").info("Releasing fan control: \(reason, privacy: .public)")
         config.mode = .system
         owner = nil
         policy.reset()
@@ -96,7 +98,7 @@ final class FanController {
             }
         } catch {
             let cause = error.localizedDescription
-            if !touched.isEmpty { release(reason: "Đã dừng điều khiển vì lỗi phần cứng.") }
+            if !touched.isEmpty { release(reason: "Đã dừng điều khiển vì lỗi phần cứng: \(cause)") }
             snapshot.error = [cause, snapshot.error].compactMap { $0 }.joined(separator: "\n")
         }
     }

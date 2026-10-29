@@ -30,6 +30,7 @@ struct FanDashboard: View {
                             Text(fan.target.map { String(format: "→ %.0f RPM", $0) } ?? "—").foregroundStyle(.secondary)
                         }.font(.caption.monospacedDigit())
                     }
+                    Text(model.language.message(model.snapshot.message)).font(.caption).foregroundStyle(.secondary)
                     controls
                     history
                     HStack(alignment: .top, spacing: 8) {

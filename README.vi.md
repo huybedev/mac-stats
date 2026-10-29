@@ -53,7 +53,7 @@ Bạn cần quyền ghi vào `/Applications`. Khi chạy trong source, `install.
 3. Chọn **macOS tự quản lý**, **Theo nhiệt độ CPU** hoặc **RPM cố định**. Chỉnh đường nhiệt hoặc mục tiêu, rồi bấm **Áp dụng**. Cấu hình được lưu sau khi áp dụng thành công.
 4. Bấm **Trả về macOS** để nhả điều khiển. Đóng cửa sổ vẫn giữ MacStats và điều khiển quạt hoạt động; thoát ứng dụng sẽ yêu cầu trả quyền về macOS.
 
-Chọn Tiếng Việt, English hoặc 简体中文 tại **Ngôn ngữ** trong cửa sổ. **Launch at Login** nằm trong menu MacStats chính. **Tự bật đường nhiệt khi mở** mặc định tắt; chỉ bật sau khi đã áp dụng đường nhiệt phù hợp. Nếu không bật, điều khiển chỉ bắt đầu khi bạn áp dụng cấu hình. Sau khi máy ngủ, bấm Áp dụng lại để tiếp tục điều khiển.
+Chọn Tiếng Việt, English hoặc 简体中文 tại **Ngôn ngữ** trong cửa sổ. **Launch at Login** nằm trong menu MacStats chính. **Tự bật đường nhiệt khi mở** mặc định tắt; chỉ bật sau khi đã áp dụng đường nhiệt phù hợp. Nếu không bật, điều khiển chỉ bắt đầu khi bạn áp dụng cấu hình. Khi đang điều khiển, MacStats giữ heartbeat khỏi bị App Nap làm trễ nhưng vẫn cho phép máy ngủ. Sau khi thức, app áp dụng lại cấu hình đã áp dụng thành công gần nhất, không dùng chỉnh sửa chưa lưu. Cấu hình đã áp dụng được giữ khi app còn chạy: sau ngủ, mất kết nối hoặc watchdog, app tự thử tiếp tục khi cảm biến hợp lệ và quạt ở Auto. Lần thử thất bại cách nhau 30 giây. Chọn trả về macOS hoặc thoát app sẽ hủy tự tiếp tục.
 
 Đường nhiệt dùng độ C và cảm biến CPU nóng nhất. Phần trăm được quy đổi theo dải phần cứng của từng quạt: 0% là RPM tối thiểu, 100% là tối đa; nội suy tuyến tính giữa các mốc. Nhu cầu làm mát tăng được đáp ứng ngay, giảm tối đa 150 RPM mỗi chu kỳ hai giây. RPM cố định cũng bị giới hạn theo từng quạt. Cửa sổ cập nhật mỗi hai giây, độc lập với chu kỳ thống kê.
 
@@ -97,7 +97,7 @@ Các script nhắm tới `/Applications/MacStats.app`: dừng app của người
 bash test.sh
 ```
 
-Lệnh chạy 27 bài kiểm thử hành vi bằng phần cứng giả lập, cùng kiểm tra cú pháp shell và plist. Các bài bao phủ validation, nội suy đường nhiệt, giới hạn RPM, ngưỡng 90°C, quyền sở hữu phiên, watchdog/mất kết nối, lỗi cảm biến/firmware và nhật ký phục hồi; không ghi quạt thật. Bản tích hợp cũng đã đạt build universal, xác minh chữ ký, kiểm tra giao diện và đọc cảm biến thật trên M4. Các kết quả này chưa xác minh điều khiển quạt thật qua helper.
+Lệnh chạy 31 bài kiểm thử hành vi bằng phần cứng giả lập, cùng kiểm tra cú pháp shell và plist. Các bài bao phủ validation, nội suy đường nhiệt, giới hạn RPM, ngưỡng 90°C, quyền sở hữu phiên, watchdog/mất kết nối, lỗi cảm biến/firmware và nhật ký phục hồi; không ghi quạt thật. Bản tích hợp cũng đã đạt build universal, xác minh chữ ký, kiểm tra giao diện và đọc cảm biến thật trên M4. Các kết quả này chưa xác minh điều khiển quạt thật qua helper.
 
 | Lệnh hoặc cờ | Hành vi |
 | --- | --- |

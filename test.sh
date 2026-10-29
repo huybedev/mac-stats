@@ -5,7 +5,7 @@ build=$(mktemp -d "${TMPDIR:-/tmp}/macstats-tests.XXXXXX")
 trap 'rm -rf "$build"' EXIT
 xcrun swiftc -swift-version 5 -target "$(uname -m)-apple-macosx14.0" \
     -module-cache-path "$build/modules" \
-    FanControl/Models.swift FanControl/FanSMC.swift FanControl/Platform.swift \
+    FanControl/Models.swift FanControl/Activity.swift FanControl/FanSMC.swift FanControl/Platform.swift \
     FanControl/Controller.swift FanControl/Localization.swift Tests/FanControlTests.swift \
     -o "$build/tests" -framework IOKit
 "$build/tests"

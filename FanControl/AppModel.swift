@@ -23,6 +23,9 @@ final class FanAppModel: ObservableObject {
         didSet { UserDefaults.standard.set(startCurve, forKey: "fanControl.startCurve") }
     }
     private var connection: NSXPCConnection?
+    private let controlActivity = FanControlActivity()
+    private var controlSession = FanControlSession()
+    private var wakeObserver: NSObjectProtocol?
     private var timer: Timer?
     private var inFlight = false
     private var requestedAt = Date.distantPast
@@ -37,9 +40,22 @@ final class FanAppModel: ObservableObject {
     init() {
         draft.mode = .curve
         if let data = UserDefaults.standard.data(forKey: "fanControl.configuration"), let stored = try? JSONDecoder().decode(FanConfiguration.self, from: data), (try? stored.validated()) != nil { draft = stored }
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.controlSession.didWake()
+            self?.refresh()
+        }
         refresh()
         timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in self?.refresh() }
         if let timer { RunLoop.main.add(timer, forMode: .common) }
+    }
+    deinit {
+        if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
+        timer?.invalidate()
+        connection?.invalidate()
+    }
+    private func stopSession() {
+        controlSession.stop()
+        controlActivity.setActive(false)
     }
     private func proxy() -> FanServiceProtocol? {
         if connection == nil {
@@ -91,6 +107,11 @@ final class FanAppModel: ObservableObject {
             guard let self, token == self.generation else { return }
             self.inFlight = false
             self.receive(data)
+            if self.connected, !self.busy, !self.shuttingDown,
+               let config = self.controlSession.resumeConfiguration(for: self.snapshot) {
+                self.apply(config)
+            }
+            if self.controlSession.configuration == nil { self.controlActivity.setActive(false) }
             if self.connected, self.startCurve, !self.didAutoStart, !self.shuttingDown {
                 self.didAutoStart = true
                 self.draft.mode = .curve
@@ -139,27 +160,36 @@ final class FanAppModel: ObservableObject {
             if history.count > 90 { history.removeFirst(history.count - 90) }
         }
     }
-    func apply() {
+    func apply() { apply(draft) }
+    private func apply(_ requested: FanConfiguration) {
         guard !busy, !shuttingDown else { return }
         do {
-            let config = try draft.validated()
+            let config = try requested.validated()
             guard connected, let proxy = proxy() else { throw FanError("Cài bộ trợ giúp trước khi điều khiển quạt.") }
             let data = try JSONEncoder().encode(config)
+            if config.mode == .system { stopSession() }
+            controlActivity.setActive(config.mode != .system || controlSession.configuration != nil)
             busy = true; error = nil; inFlight = true; requestedAt = Date()
             let token = generation
             proxy.configure(data) { [weak self] response in DispatchQueue.main.async {
                 guard let self, token == self.generation else { return }
                 self.busy = false; self.inFlight = false; self.receive(response)
-                if self.error == nil, self.snapshot.error == nil { UserDefaults.standard.set(data, forKey: "fanControl.configuration") }
+                if self.error == nil, self.snapshot.error == nil {
+                    self.controlSession.applied(config)
+                    UserDefaults.standard.set(data, forKey: "fanControl.configuration")
+                } else { self.controlSession.retryLater() }
+                self.controlActivity.setActive(self.controlSession.configuration != nil)
             } }
         } catch { self.error = error.localizedDescription }
     }
     func prepareToQuit(completion: @escaping () -> Void) {
         shuttingDown = true
+        stopSession()
         timer?.invalidate()
         restore(completion: completion)
     }
     func restore(completion: (() -> Void)? = nil) {
+        stopSession()
         guard let connection else { completion?(); return }
         let token = generation
         var finished = false

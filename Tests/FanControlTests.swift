@@ -31,6 +31,77 @@ final class FakeHardware: FanHardware {
     }
     static func rejected(_ body: () throws -> Void) { do { try body(); fatalError("expected rejection") } catch {} }
     static func main() throws {
+        check("background activity spans hidden-window control and releases exactly once") {
+            var begins = 0, ends = 0
+            var activity: FanControlActivity? = FanControlActivity(begin: { begins += 1; return NSObject() }, end: { _ in ends += 1 })
+            activity?.setActive(false); require(begins == 0 && ends == 0)
+            activity?.setActive(true); activity?.setActive(true)
+            require(begins == 1 && ends == 0)
+            activity?.setActive(false); activity?.setActive(false)
+            require(ends == 1)
+            activity?.setActive(true); activity = nil
+            require(begins == 2 && ends == 2)
+        }
+        check("background fallback resumes the applied settings without unsaved edits") {
+            var session = FanControlSession()
+            var applied = FanConfiguration(); applied.mode = .curve
+            session.applied(applied)
+            var draft = applied; draft.points[0].temperature = 30
+            let status = FanController(hardware: FakeHardware()).snapshot
+            let now = Date()
+            require(session.resumeConfiguration(for: status, now: now) == applied)
+            require(session.resumeConfiguration(for: status, now: now) == nil)
+            require(session.resumeConfiguration(for: status, now: now.addingTimeInterval(31)) == applied)
+            require(applied != draft)
+            session.didWake()
+            require(session.resumeConfiguration(for: status, now: now) == applied)
+            let hw = FakeHardware(); let controller = FanController(hardware: hw); let owner = UUID()
+            try! controller.configure(applied, client: owner, now: now)
+            for seconds in stride(from: 2, through: 1800, by: 2) {
+                let time = now.addingTimeInterval(Double(seconds))
+                _ = controller.status(client: owner, now: time)
+                controller.tick(now: time)
+            }
+            require(controller.snapshot.mode == .curve && hw.restores.isEmpty)
+            let expired = now.addingTimeInterval(1815)
+            controller.tick(now: expired)
+            require(controller.snapshot.mode == .system && hw.restores == [[0]])
+            session.didWake()
+            let retry = session.resumeConfiguration(for: controller.snapshot, now: expired)
+            require(retry == applied)
+            try! controller.configure(retry!, client: owner, now: expired)
+            require(controller.snapshot.mode == .curve)
+        }
+        check("temporary sensor errors preserve intent but block unsafe resumption") {
+            var session = FanControlSession()
+            var applied = FanConfiguration(); applied.mode = .manual; applied.manualRPM = 2300
+            session.applied(applied)
+            var status = FanController(hardware: FakeHardware()).snapshot
+            status.error = "sensor failure"
+            require(session.resumeConfiguration(for: status) == nil && session.configuration == applied)
+            status.error = nil; status.cpu = []
+            require(session.resumeConfiguration(for: status) == nil)
+            status = FanController(hardware: FakeHardware()).snapshot
+            status.fans = []
+            require(session.resumeConfiguration(for: status) == nil)
+            status = FanController(hardware: FakeHardware()).snapshot
+            require(session.resumeConfiguration(for: status) == applied)
+        }
+        check("explicit system mode and release cancel retries; another controller is respected") {
+            var session = FanControlSession()
+            var applied = FanConfiguration(); applied.mode = .curve
+            session.applied(applied)
+            var status = FanController(hardware: FakeHardware()).snapshot
+            status.fans = [FanReading(id: 0, actual: 2000, minimum: 1000, maximum: 4900, target: 2000, hardwareMode: 1)]
+            require(session.resumeConfiguration(for: status) == nil)
+            status = FanController(hardware: FakeHardware()).snapshot
+            status.mode = .curve
+            require(session.resumeConfiguration(for: status) == nil)
+            session.stop(); session.didWake(); status.mode = .system
+            require(session.resumeConfiguration(for: status) == nil)
+            session.applied(applied); session.applied(FanConfiguration()); session.didWake()
+            require(session.resumeConfiguration(for: status) == nil)
+        }
         check("fan support is restricted to the existing M4 sensor family") {
             require(FanPlatform.supports(brand: "Apple M4"))
             require(FanPlatform.supports(brand: "Apple M4 Pro"))

@@ -38,6 +38,12 @@ enum FanLanguage: String, CaseIterable, Identifiable {
         return result
     }
     private static let translations: [String: (String, String)] = [
+        "macOS đang quản lý quạt.": ("macOS is managing the fans.", "macOS 正在管理风扇。"),
+        "Máy đã ngủ; macOS đang quản lý quạt.": ("The Mac slept; macOS is managing the fans.", "Mac 已睡眠；macOS 正在管理风扇。"),
+        "Ứng dụng không phản hồi; đã trả về macOS.": ("The app missed its heartbeat; control returned to macOS.", "应用心跳超时；控制权已交还 macOS。"),
+        "Ứng dụng đã ngắt kết nối; đã trả về macOS.": ("The app disconnected; control returned to macOS.", "应用已断开连接；控制权已交还 macOS。"),
+        "Đã dừng điều khiển vì lỗi phần cứng:": ("Control stopped after a hardware error:", "硬件错误导致控制停止："),
+        "CPU/GPU ≥ 90°C: đang yêu cầu tốc độ tối đa.": ("CPU/GPU ≥ 90°C: requesting maximum speed.", "CPU/GPU ≥ 90°C：正在请求最高转速。"),
         "Ngôn ngữ": ("Language", "语言"),
         "Mở MacStats": ("Open MacStats", "打开 MacStats"),
         "Bật theo nhiệt độ CPU": ("Use CPU temperature", "按 CPU 温度调节"),

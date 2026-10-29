@@ -53,7 +53,7 @@ This requires write access to `/Applications`. A local `install.sh` builds the l
 3. Select **macOS automatic**, **CPU temperature**, or **Fixed RPM**. Edit the curve or target, then click **Apply**. Configuration is saved after a successful apply.
 4. Click **Return to macOS** to release control. Closing the window keeps MacStats and fan control running; quitting requests a return to macOS.
 
-Use **Language** in the dashboard to select Vietnamese, English, or Simplified Chinese. **Launch at Login** remains in the main MacStats menu. **Enable CPU curve on launch** is off by default; enable it after applying a suitable curve. Otherwise, control starts only when you apply settings. After sleep, apply again to resume control.
+Use **Language** in the dashboard to select Vietnamese, English, or Simplified Chinese. **Launch at Login** remains in the main MacStats menu. **Enable CPU curve on launch** is off by default; enable it after applying a suitable curve. Otherwise, control starts only when you apply settings. While a custom mode is active, MacStats prevents App Nap from delaying its heartbeat without preventing system sleep. After wake, it reapplies the last successfully applied configuration; unsaved edits are not applied. The applied configuration remains the intent while the app runs: after sleep, disconnect or watchdog fallback, it retries once valid sensors and automatic hardware state return. Failed retries are spaced by 30 seconds. Explicit return to macOS or quitting cancels resumption.
 
 Curve temperatures use Celsius and the hottest CPU sensor. Each fan's curve percentage maps to its own hardware range: 0% is minimum RPM, 100% is maximum RPM, with linear interpolation between points. Cooling demand rises immediately and decreases by at most 150 RPM per two-second cycle. Fixed RPM is also bounded by each fan's limits. The dashboard refreshes every two seconds independently of the monitoring interval.
 
@@ -97,7 +97,7 @@ These scripts target `/Applications/MacStats.app`, stop the current user's app, 
 bash test.sh
 ```
 
-This runs 27 behavioral tests with simulated hardware, plus shell syntax and plist checks. Tests cover validation, curve interpolation, RPM limits, the 90°C override, ownership, watchdog/disconnect recovery, sensor and firmware errors, and the recovery journal. They do not write to real fans. The integrated app has also passed a universal build, signature verification, UI checks, and read-only sensor checks on M4; these do not establish live fan-control coverage.
+This runs 31 behavioral tests with simulated hardware, plus shell syntax and plist checks. Tests cover validation, curve interpolation, RPM limits, the 90°C override, ownership, watchdog/disconnect recovery, sensor and firmware errors, and the recovery journal. They do not write to real fans. The integrated app has also passed a universal build, signature verification, UI checks, and read-only sensor checks on M4; these do not establish live fan-control coverage.
 
 | Command or flag | Behavior |
 | --- | --- |

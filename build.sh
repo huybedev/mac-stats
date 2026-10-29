@@ -20,7 +20,7 @@ python3 generate_icon.py || echo "Warning: Icon generation failed, continuing...
 
 BUILD_DIR=$(mktemp -d "${TMPDIR:-/tmp}/macstats-build.XXXXXX")
 trap 'rm -rf "$BUILD_DIR"' EXIT
-FAN_SHARED=(FanControl/Models.swift FanControl/FanSMC.swift FanControl/Platform.swift)
+FAN_SHARED=(FanControl/Models.swift FanControl/Activity.swift FanControl/FanSMC.swift FanControl/Platform.swift)
 SOURCES=(SMC.swift StatsEngine.swift StatusBarView.swift Updater.swift
     "${FAN_SHARED[@]}" FanControl/Localization.swift FanControl/AppModel.swift
     FanControl/Dashboard.swift FanControl/Feature.swift AppDelegate.swift main.swift)
